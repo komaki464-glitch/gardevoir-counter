@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>サーナイト スキルカウンター</title>
+    <style>
+        :root {
+            --primary-color: #68d391;
+            --bg-color: #f7fafc;
+            --card-bg: #ffffff;
+            --text-color: #2d3748;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        h1 {
+            font-size: 1.2rem;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #4a5568;
+        }
+        .config-section {
+            background: #edf2f7;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        .config-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .config-row:last-child { margin-bottom: 0; }
+        .config-row input {
+            width: 80px;
+            text-align: right;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            padding: 2px 4px;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        .stat-box.highlight {
+            grid-column: span 2;
+            background: #ebf8ff;
+            border-color: #bee3f8;
+        }
+        .stat-val {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+        .stat-val.plus { color: #38a169; }
+        .stat-val.minus { color: #e53e3e; }
+        
+        .trigger-btn {
+            width: 100%;
+            height: 80px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(104, 211, 145, 0.4);
+            transition: transform 0.1s;
+            margin-bottom: 16px;
+        }
+        .trigger-btn:active {
+            transform: scale(0.98);
+        }
+        .control-btns {
+            display: flex;
+            gap: 8px;
+        }
+        .control-btns button {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            background: white;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .log-section {
+            margin-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 12px;
+        }
+        .log-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+        .log-list {
+            max-height: 120px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            color: #4a5568;
+            padding-left: 20px;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>サーナイト スキルカウンター</h1>
+    
+    <div class="config-section">
+        <div class="config-row">
+            <label>おてつだい周期 (秒):</label>
+            <input type="number" id="period" value="2200" onchange="updateCalculations()">
+        </div>
+        <div class="config-row">
+            <label>スキル発動確率 (%):</label>
+            <input type="number" id="prob" value="4.0" step="0.1" onchange="updateCalculations()">
+        </div>
+        <div class="config-row">
+            <label>1時間の期待値:</label>
+            <span id="hourly-exp">0.065</span>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="stat-box">
+            <div>経過時間</div>
+            <div class="stat-val" id="elapsed-time">0.0h</div>
+        </div>
+        <div class="stat-box">
+            <div>現在の期待値</div>
+            <div class="stat-val" id="expected-count">0.00</div>
+        </div>
+        <div class="stat-box highlight">
+            <div>期待値との差分</div>
+            <div class="stat-val" id="diff-count">±0.00</div>
+        </div>
+    </div>
+
+    <button class="trigger-btn" onclick="recordSkill()">スキル発動！ (<span id="actual-count">0</span>)</button>
+
+    <div class="control-btns">
+        <button onclick="startTracking()">計測開始/リセット</button>
+    </div>
+
+    <div class="log-section">
+        <div class="log-title">本日の発動履歴</div>
+        <ul class="log-list" id="log-list">
+            </ul>
+    </div>
+</div>
+
+<script>
+    let startTime = null;
+    let actualCount = 0;
+    let timerInterval = null;
+    let logs = [];
+
+    // 初期化と計算
+    function updateCalculations() {
+        const period = parseFloat(document.getElementById('period').value);
+        const prob = parseFloat(document.getElementById('prob').value) / 100;
+        
+        // 1時間あたりの補正後おてつだい回数 × 確率
+        const hourlyExp = (3600 / period) * prob;
+        document.getElementById('hourly-exp').textContent = hourlyExp.toFixed(4);
+        
+        updateDashboard();
+    }
+
+    function startTracking() {
+        if(confirm("データをリセットして新しく計測を開始しますか？")) {
+            startTime = new Date();
+            actualCount = 0;
+            logs = [];
+            document.getElementById('log-list').innerHTML = "";
+            addLog("計測を開始しました");
+            
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateDashboard, 10000); // 10秒ごとに更新
+            
+            updateDashboard();
+        }
+    }
+
+    function recordSkill() {
+        if(!startTime) {
+            alert("先に「計測開始/リセット」ボタンを押してください。");
+            return;
+        }
+        actualCount++;
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        addLog(`${timeStr} スキル発動`);
+        updateDashboard();
+    }
+
+    function addLog(text) {
+        logs.unshift(text);
+        const list = document.getElementById('log-list');
+        list.innerHTML = logs.map(log => `<li>${log}</li>`).join('');
+    }
+
+    function updateDashboard() {
+        if(!startTime) return;
+        
+        const now = new Date();
+        const elapsedHours = (now - startTime) / (1000 * 60 * 60);
+        const hourlyExp = parseFloat(document.getElementById('hourly-exp').textContent);
+        
+        const expected = elapsedHours * hourlyExp;
+        const diff = actualCount - expected;
+        
+        document.getElementById('elapsed-time').textContent = elapsedHours.toFixed(1) + "h";
+        document.getElementById('expected-count').textContent = expected.toFixed(2);
+        document.getElementById('actual-count').textContent = actualCount;
+        
+        const diffEl = document.getElementById('diff-count');
+        if(diff >= 0) {
+            diffEl.textContent = `+${diff.toFixed(2)}`;
+            diffEl.className = "stat-val plus";
+        } else {
+            diffEl.textContent = `${diff.toFixed(2)}`;
+            diffEl.className = "stat-val minus";
+        }
+    }
+
+    // 最初に計算を走らせる
+    updateCalculations();
+</script>
+
+</body>
+</html>
