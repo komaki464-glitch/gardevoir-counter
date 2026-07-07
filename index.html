@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>サーナイト スキル＆げんきカウンター</title>
+    <title>サーナイト スキル＆げんきカウンター V5</title>
     <style>
         :root {
             --primary-color: #68d391;
@@ -65,6 +65,7 @@
             border-radius: 4px;
             background: white;
             font-size: 0.85rem;
+            max-width: 250px;
         }
         .checkbox-group {
             display: flex;
@@ -151,40 +152,69 @@
 <body>
 
 <div class="container">
-    <h1>サーナイト カウンター V2</h1>
+    <h1>サーナイト カウンター V5</h1>
     
+    <!-- 個体・環境設定 -->
     <div class="section-title">個体・環境設定</div>
     <div class="config-section">
         <div class="config-row">
-            <label>性格補正:</label>
+            <label>現在のレベル:</label>
+            <input type="number" id="pokemon-lvl" value="70" min="1" max="100" style="width: 60px;" onchange="updateCalculations()">
+        </div>
+        <div class="config-row">
+            <label>性格:</label>
             <select id="nature" onchange="updateCalculations()">
-                <option value="none">無補正</option>
-                <option value="speed_up">おてつだいスピード ＋</option>
-                <option value="speed_down">おてつだいスピード －</option>
-                <option value="prob_up">スキル発動確率 ＋</option>
-                <option value="prob_down">スキル発動確率 －</option>
-                <option value="bdaya">おだやか (確率＋/スピード－)</option>
-                <option value="energy_down">げんき回復量 － (おっとり等)</option>
+                <!-- 無補正 -->
+                <option value="がんばりや" data-speed="0.0" data-skill="1.0" data-energy="1.0">がんばりや（無補正）</option>
+                <option value="すなお" data-speed="0.0" data-skill="1.0" data-energy="1.0">すなお（無補正）</option>
+                <option value="てれや" data-speed="0.0" data-skill="1.0" data-energy="1.0">てれや（無補正）</option>
+                <option value="きまぐれ" data-speed="0.0" data-skill="1.0" data-energy="1.0">きまぐれ（無補正）</option>
+                <option value="まじめ" data-speed="0.0" data-skill="1.0" data-energy="1.0">まじめ（無補正）</option>
+                <!-- スピードUP -->
+                <option value="さみしがり" data-speed="-0.1" data-skill="1.0" data-energy="0.8" selected>さみしがり（おてつだいスピードUP・げんき回復量DOWN）</option>
+                <option value="いじっぱり" data-speed="-0.1" data-skill="1.0" data-energy="1.0">いじっぱり（おてつだいスピードUP・食材おてつだい確率DOWN）</option>
+                <option value="やんちゃ" data-speed="-0.1" data-skill="0.8" data-energy="1.0">やんちゃ（おてつだいスピードUP・メインスキル発生確率DOWN）</option>
+                <option value="ゆうかん" data-speed="-0.1" data-skill="1.0" data-energy="1.0">ゆうかん（おてつだいスピードUP・EXP獲得量DOWN）</option>
+                <!-- 元気UP -->
+                <option value="ずぶとい" data-speed="0.1" data-skill="1.0" data-energy="1.2">ずぶとい（げんき回復量UP・おてつだいスピードDOWN）</option>
+                <option value="わんぱく" data-speed="0.0" data-skill="1.0" data-energy="1.2">わんぱく（げんき回復量UP・食材おてつだい確率DOWN）</option>
+                <option value="のうてんき" data-speed="0.0" data-skill="0.8" data-energy="1.2">のうてんき（げんき回復量UP・メインスキル発生確率DOWN）</option>
+                <option value="のんき" data-speed="0.0" data-skill="1.0" data-energy="1.2">のんき（げんき回復量UP・EXP獲得量DOWN）</option>
+                <!-- 食材UP -->
+                <option value="ひかえめ" data-speed="0.1" data-skill="1.0" data-energy="1.0">ひかえめ（食材おてつだい確率UP・おてつだいスピードDOWN）</option>
+                <option value="おっとり" data-speed="0.0" data-skill="1.0" data-energy="0.8">おっとり（食材おてつだい確率UP・げんき回復量DOWN）</option>
+                <option value="うっかりや" data-speed="0.0" data-skill="0.8" data-energy="1.0">うっかりや（食材おてつだい確率UP・メインスキル発生確率DOWN）</option>
+                <option value="れいせい" data-speed="0.0" data-skill="1.0" data-energy="1.0">れいせい（食材おてつだい確率UP・EXP獲得量DOWN）</option>
+                <!-- スキルUP -->
+                <option value="おだやか" data-speed="0.1" data-skill="1.2" data-energy="1.0">おだやか（メインスキル発生確率UP・おてつだいスピードDOWN）</option>
+                <option value="おとなしい" data-speed="0.0" data-skill="1.2" data-energy="0.8">おとなしい（メインスキル発生確率UP・げんき回復量DOWN）</option>
+                <option value="しんちょう" data-speed="0.0" data-skill="1.2" data-energy="1.0">しんちょう（メインスキル発生確率UP・食材おてつだい確率DOWN）</option>
+                <option value="なまいき" data-speed="0.0" data-skill="1.2" data-energy="1.0">なまいき（メインスキル発生確率UP・EXP獲得量DOWN）</option>
+                <!-- EXP UP -->
+                <option value="おくびょう" data-speed="0.1" data-skill="1.0" data-energy="1.0">おくびょう（EXP獲得量UP・おてつだいスピードDOWN）</option>
+                <option value="せっかち" data-speed="0.0" data-skill="1.0" data-energy="0.8">せっかち（EXP獲得量UP・げんき回復量DOWN）</option>
+                <option value="ようき" data-speed="0.0" data-skill="1.0" data-energy="1.0">ようき（EXP獲得量UP・食材おてつだい確率DOWN）</option>
+                <option value="むじゃき" data-speed="0.0" data-skill="0.8" data-energy="1.0">むじゃき（EXP獲得量UP・メインスキル発生確率DOWN）</option>
             </select>
         </div>
         <div class="config-row">
             <label>サブスキル(確率):</label>
             <div class="checkbox-group">
-                <label><input type="checkbox" id="sub-prob-m" onchange="updateCalculations()">確率M</label>
-                <label><input type="checkbox" id="sub-prob-s" onchange="updateCalculations()">確率S</label>
+                <label><input type="checkbox" id="sub-prob-m" checked onchange="updateCalculations()">確率M</label>
+                <label><input type="checkbox" id="sub-prob-s" checked onchange="updateCalculations()">確率S</label>
             </div>
         </div>
         <div class="config-row">
             <label>サブスキル(スピード):</label>
             <div class="checkbox-group">
-                <label><input type="checkbox" id="sub-speed-m" onchange="updateCalculations()">スピM</label>
+                <label><input type="checkbox" id="sub-speed-m" checked onchange="updateCalculations()">スピM</label>
                 <label><input type="checkbox" id="sub-speed-s" onchange="updateCalculations()">スピS</label>
             </div>
         </div>
         <div class="config-row">
-            <label>おてつだいボーナス:</label>
-            <select id="sub-otomo" onchange="updateCalculations()">
-                <option value="0">なし</option>
+            <label>チームのおてつだいボーナス:</label>
+            <select id="team-otomo" onchange="updateCalculations()">
+                <option value="0" selected>なし (0枚)</option>
                 <option value="1">1枚 (5%)</option>
                 <option value="2">2枚 (10%)</option>
                 <option value="3">3枚 (15%)</option>
@@ -217,12 +247,16 @@
                 <option value="debuff">EXデバフ (対象外:時間+15%/確率1.25倍)</option>
             </select>
         </div>
-        <div class="config-row" style="border-top: 1px dashed #cbd5e0; padding-top: 6px; margin-top: 6px;">
-            <span>算出された1時間期待値:</span>
-            <span id="hourly-exp" style="font-weight: bold;">0.0000</span>
+        
+        <!-- 連動ステータス表示 -->
+        <div style="border-top: 1px dashed #cbd5e0; padding-top: 8px; margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+            <div>ゲーム内おてつだい時間: <span id="calculated-period" style="font-weight: bold; color: #2b6cb0;">--分--秒</span></div>
+            <div>算出スキル確率: <span id="calculated-prob" style="font-weight: bold; color: #2b6cb0;">--%</span></div>
+            <div style="grid-column: span 2; margin-top: 4px;">1時間あたりのスキル期待値: <span id="hourly-exp" style="font-weight: bold;">0.00000</span></div>
         </div>
     </div>
 
+    <!-- げんき度管理 -->
     <div class="section-title">げんき度リアルタイムシミュレート</div>
     <div class="dashboard" style="grid-template-columns: 1fr 1fr; margin-bottom: 8px;">
         <div class="stat-box energy-box" style="grid-column: span 1;">
@@ -242,6 +276,7 @@
         </div>
     </div>
 
+    <!-- スキル統計ダッシュボード -->
     <div class="section-title">スキル発動統計</div>
     <div class="dashboard">
         <div class="stat-box">
@@ -258,12 +293,14 @@
         </div>
     </div>
 
+    <!-- メインボタン -->
     <button class="trigger-btn" onclick="recordSkill()">スキル発動！ (<span id="actual-count">0</span>)</button>
 
     <div class="control-btns">
         <button onclick="startTracking()">計測開始 / 全リセット</button>
     </div>
 
+    <!-- 履歴ログ -->
     <div class="log-section">
         <div class="section-title">本日のログ</div>
         <ul class="log-list" id="log-list"></ul>
@@ -271,7 +308,6 @@
 </div>
 
 <script>
-    // 状態管理変数
     let startTime = null;
     let actualCount = 0;
     let logs = [];
@@ -279,73 +315,78 @@
     let baseEnergyVal = 100;
     let timerInterval = null;
 
-    // 定数ベース値
-    const BASE_PERIOD = 2600; // サーナイト基本おてつだい時間
-    const BASE_PROB = 0.04;   // 基本スキル確率 4.0%
-
-    // 各スキルレベルの基本回復量
+    // サーナイトの正しい基本値
+    const BASE_PERIOD = 2400; 
+    const BASE_PROB = 0.042;   
     const HEAL_TABLE = { 1: 5, 2: 7, 3: 9, 4: 11, 5: 15, 6: 18 };
 
     function updateCalculations() {
-        // 1. おてつだいスピード補正の計算
-        let speedBonus = 0;
-        if (document.getElementById('sub-speed-m').checked) speedBonus -= 0.14;
-        if (document.getElementById('sub-speed-s').checked) speedBonus -= 0.07;
+        // --- 1. おてつだい時間の計算 ---
+        const lvl = parseInt(document.getElementById('pokemon-lvl').value) || 1;
+        const lvlBonus = 1 - (lvl - 1) * 0.002;
+
+        const natureSelect = document.getElementById('nature');
+        const selectedNature = natureSelect.options[natureSelect.selectedIndex];
         
-        const otomoBonus = parseInt(document.getElementById('sub-otomo').value);
-        speedBonus -= (otomoBonus * 0.05);
+        // 性格補正の取得 (parseFloatで文字列を数値に変換)
+        const natureSpeedBonus = parseFloat(selectedNature.getAttribute('data-speed'));
+        const natureSkillBonus = parseFloat(selectedNature.getAttribute('data-skill'));
+        const natureEnergyBonus = parseFloat(selectedNature.getAttribute('data-energy'));
 
-        const nature = document.getElementById('nature').value;
-        if (nature === 'speed_up') speedBonus -= 0.10;
-        if (nature === 'speed_down' || nature === 'bdaya') speedBonus += 0.10;
+        // サブスキル＆おてボのスピード補正 (加算方式、上限-35%)
+        let subSpeedBonus = 0;
+        if (document.getElementById('sub-speed-m').checked) subSpeedBonus -= 0.14;
+        if (document.getElementById('sub-speed-s').checked) subSpeedBonus -= 0.07;
+        const teamOtomo = parseInt(document.getElementById('team-otomo').value);
+        subSpeedBonus -= (teamOtomo * 0.05);
 
-        // ゲーム内上限（35%短縮まで）の丸め処理
-        if (speedBonus < -0.35) speedBonus = -0.35;
+        if (subSpeedBonus < -0.35) subSpeedBonus = -0.35;
 
-        // 実際の周期計算
-        let finalPeriod = BASE_PERIOD * (1 + speedBonus);
+        // ゲーム内表記時間の計算 (性格とサブスキルは別々に「乗算」される)
+        const gamePeriod = Math.floor(BASE_PERIOD * (1 + natureSpeedBonus) * (1 + subSpeedBonus) * lvlBonus);
+        
+        // 画面表示用
+        const displayMin = Math.floor(gamePeriod / 60);
+        const displaySec = gamePeriod % 60;
+        document.getElementById('calculated-period').textContent = `${displayMin}分${displaySec}秒`;
 
-        // いいキャンプチケット補正 (乗算)
+        // チケットやEXバフを乗算（実際の稼働スピード用）
+        let activePeriod = gamePeriod;
         if (document.getElementById('camp-ticket').checked) {
-            finalPeriod = finalPeriod / 1.2;
+            activePeriod = activePeriod / 1.2;
         }
 
-        // EXバフ補正 (おてつだい時間への乗算)
         const exBuff = document.getElementById('ex-buff').value;
         let exProbMultiplier = 1.0;
         if (exBuff === 'buff') {
-            finalPeriod = finalPeriod * 0.90; // 10%短縮
+            activePeriod = activePeriod * 0.90; 
             exProbMultiplier = 1.25;
         } else if (exBuff === 'debuff') {
-            finalPeriod = finalPeriod * 1.15; // 15%延長
+            activePeriod = activePeriod * 1.15; 
             exProbMultiplier = 1.25;
         }
 
-        // 2. スキル確率補正の計算
-        let probMultiplier = 1.0;
-        if (document.getElementById('sub-prob-m').checked) probMultiplier += 0.36;
-        if (document.getElementById('sub-prob-s').checked) probMultiplier += 0.18;
+        // --- 2. スキル確率の計算 ---
+        let subProbBonus = 0;
+        if (document.getElementById('sub-prob-m').checked) subProbBonus += 0.36;
+        if (document.getElementById('sub-prob-s').checked) subProbBonus += 0.18;
 
-        if (nature === 'prob_up' || nature === 'bdaya') probMultiplier *= 1.2;
-        if (nature === 'prob_down') probMultiplier *= 0.8;
+        const finalProb = BASE_PROB * (1 + subProbBonus) * natureSkillBonus * exProbMultiplier;
+        document.getElementById('calculated-prob').textContent = (finalProb * 100).toFixed(1) + "%";
 
-        const finalProb = BASE_PROB * probMultiplier * exProbMultiplier;
-
-        // 3. 1時間あたりの期待値算出
-        const hourlyExp = (3600 / finalPeriod) * finalProb;
+        // --- 3. 1時間あたりの期待値 ---
+        const hourlyExp = (3600 / activePeriod) * finalProb;
         document.getElementById('hourly-exp').textContent = hourlyExp.toFixed(5);
 
         updateDashboard();
     }
 
-    // リアルタイムなげんき度の取得
     function getLiveEnergy() {
         if (!lastEnergyUpdateIdxTime) return baseEnergyVal;
         const now = new Date();
         const elapsedMinutes = (now - lastEnergyUpdateIdxTime) / (1000 * 60);
-        const dropAmount = elapsedMinutes / 10; // 10分で1減少
-        const currentCalculated = baseEnergyVal - dropAmount;
-        return Math.max(0, currentCalculated);
+        const dropAmount = elapsedMinutes / 10; 
+        return Math.max(0, baseEnergyVal - dropAmount);
     }
 
     function setManualEnergy() {
@@ -361,10 +402,11 @@
     function getHealAmount() {
         const lv = parseInt(document.getElementById('skill-lv').value);
         let heal = HEAL_TABLE[lv] || 5;
-        const nature = document.getElementById('nature').value;
-        if (nature === 'energy_down') {
-            heal = Math.floor(heal * 0.8); // げんき回復量ダウン補正
-        }
+        
+        const natureSelect = document.getElementById('nature');
+        const natureEnergyBonus = parseFloat(natureSelect.options[natureSelect.selectedIndex].getAttribute('data-energy'));
+        
+        heal = Math.floor(heal * natureEnergyBonus); 
         return heal;
     }
 
@@ -372,16 +414,16 @@
         if(confirm("すべての記録をリセットして新しく計測を開始しますか？")) {
             startTime = new Date();
             lastEnergyUpdateIdxTime = new Date();
-            baseEnergyVal = 100; // 開始時は100%想定
+            baseEnergyVal = 100; 
             actualCount = 0;
             logs = [];
             document.getElementById('log-list').innerHTML = "";
             addLog("計測を開始しました (初期げんき度:100%)");
             
             if(timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(updateDashboard, 5000); // 5秒ごとに表示更新
+            timerInterval = setInterval(updateDashboard, 5000); 
             
-            updateDashboard();
+            updateCalculations();
         }
     }
 
@@ -392,10 +434,9 @@
         }
         actualCount++;
         
-        // げんき回復の計算
         const beforeEnergy = getLiveEnergy();
         const healAmount = getHealAmount();
-        const afterEnergy = Math.min(150, beforeEnergy + healAmount); // 上限150%
+        const afterEnergy = Math.min(150, beforeEnergy + healAmount); 
         
         baseEnergyVal = afterEnergy;
         lastEnergyUpdateIdxTime = new Date();
@@ -436,24 +477,21 @@
             diffEl.className = "stat-val minus";
         }
 
-        // げんき度表示の更新
         const liveEnergy = getLiveEnergy();
         document.getElementById('current-energy').textContent = Math.floor(liveEnergy) + "%";
 
-        // 80%を切る時間の予測
         const predictEl = document.getElementById('predict-time');
         if (liveEnergy <= 80) {
             predictEl.textContent = "すでに80%未満";
             predictEl.style.color = "#e53e3e";
         } else {
-            const minutesTo80 = (liveEnergy - 80) * 10; // 1%下がるのに10分
+            const minutesTo80 = (liveEnergy - 80) * 10; 
             const targetTime = new Date(now.getTime() + minutesTo80 * 60 * 1000);
             predictEl.textContent = targetTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             predictEl.style.color = "#2d3748";
         }
     }
 
-    // 初期起動時
     updateCalculations();
 </script>
 
