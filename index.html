@@ -1,367 +1,526 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>サーナイト スキル＆げんきカウンター V7</title>
-    <style>
-        :root {
-            --primary-color: #68d391;
-            --bg-color: #f7fafc;
-            --card-bg: #ffffff;
-            --text-color: #2d3748;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .container {
-            width: 100%;
-            max-width: 480px;
-            background: var(--card-bg);
-            border-radius: 16px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            padding: 16px;
-            box-sizing: border-box;
-        }
-        h1 {
-            font-size: 1.2rem;
-            text-align: center;
-            margin-top: 0;
-            margin-bottom: 16px;
-            color: #4a5568;
-        }
-        .section-title {
-            font-size: 0.95rem;
-            font-weight: bold;
-            color: #4a5568;
-            margin-bottom: 8px;
-            border-left: 4px solid var(--primary-color);
-            padding-left: 6px;
-        }
-        .config-section {
-            background: #edf2f7;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            font-size: 0.85rem;
-        }
-        .config-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        .config-row:last-child { margin-bottom: 0; }
-        select, input[type="number"] {
-            padding: 4px;
-            border: 1px solid #cbd5e0;
-            border-radius: 4px;
-            background: white;
-            font-size: 0.85rem;
-            max-width: 250px;
-        }
-        .checkbox-group {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .dashboard {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .stat-box {
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-            font-size: 0.8rem;
-        }
-        .stat-box.highlight {
-            grid-column: span 2;
-            background: #ebf8ff;
-            border-color: #bee3f8;
-        }
-        .stat-box.energy-box {
-            grid-column: span 2;
-            background: #fffaf0;
-            border-color: #feebc8;
-        }
-        .stat-val {
-            font-size: 1.3rem;
-            font-weight: bold;
-            margin-top: 4px;
-        }
-        .stat-val.plus { color: #38a169; }
-        .stat-val.minus { color: #e53e3e; }
-        .stat-val.energy { color: #dd6b20; }
-        
-        .trigger-btn {
-            width: 100%;
-            height: 70px;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 14px rgba(104, 211, 145, 0.4);
-            transition: transform 0.1s;
-            margin-bottom: 12px;
-        }
-        .trigger-btn:active { transform: scale(0.98); }
-        
-        .control-btns {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .control-btns button {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid #cbd5e0;
-            background: white;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            cursor: pointer;
-        }
-        .log-section {
-            border-top: 1px solid #e2e8f0;
-            padding-top: 12px;
-        }
-        .log-list {
-            max-height: 150px;
-            overflow-y: auto;
-            font-size: 0.8rem;
-            color: #4a5568;
-            padding-left: 20px;
-            margin: 0;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>サーナイト スキル＆げんきカウンター V7.2</title>
+<style>
+:root {
+--primary-color: #68d391;
+--bg-color: #f7fafc;
+--card-bg: #ffffff;
+--text-color: #2d3748;
+}
+body {
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+background-color: var(--bg-color);
+color: var(--text-color);
+margin: 0;
+padding: 12px;
+display: flex;
+flex-direction: column;
+align-items: center;
+}
+.container {
+width: 100%;
+max-width: 480px;
+background: var(--card-bg);
+border-radius: 16px;
+box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+padding: 16px;
+box-sizing: border-box;
+}
+h1 {
+font-size: 1.2rem;
+text-align: center;
+margin-top: 0;
+margin-bottom: 16px;
+color: #4a5568;
+}
+.section-title {
+font-size: 0.95rem;
+font-weight: bold;
+color: #4a5568;
+margin-bottom: 8px;
+border-left: 4px solid var(--primary-color);
+padding-left: 6px;
+}
+.config-section {
+background: #edf2f7;
+padding: 12px;
+border-radius: 8px;
+margin-bottom: 16px;
+font-size: 0.85rem;
+}
+.config-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 8px;
+}
+.config-row:last-child { margin-bottom: 0; }
+select, input[type="number"] {
+padding: 4px;
+border: 1px solid #cbd5e0;
+border-radius: 4px;
+background: white;
+font-size: 0.85rem;
+max-width: 250px;
+}
+.checkbox-group {
+display: flex;
+gap: 12px;
+flex-wrap: wrap;
+}
+.dashboard {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 8px;
+margin-bottom: 16px;
+}
+.stat-box {
+background: #f7fafc;
+border: 1px solid #e2e8f0;
+border-radius: 8px;
+padding: 10px;
+text-align: center;
+font-size: 0.8rem;
+}
+.stat-box.highlight {
+grid-column: span 2;
+background: #ebf8ff;
+border-color: #bee3f8;
+}
+.stat-box.energy-box {
+grid-column: span 2;
+background: #fffaf0;
+border-color: #feebc8;
+}
+.stat-val {
+font-size: 1.3rem;
+font-weight: bold;
+margin-top: 4px;
+}
+.stat-val.plus { color: #38a169; }
+.stat-val.minus { color: #e53e3e; }
+.stat-val.energy { color: #dd6b20; }
+
+    .trigger-btn {
+        width: 100%;
+        height: 70px;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(104, 211, 145, 0.4);
+        transition: transform 0.1s;
+        margin-bottom: 12px;
+    }
+    .trigger-btn:active { transform: scale(0.98); }
+    
+    .control-btns {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+    .control-btns button {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #cbd5e0;
+        background: white;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        cursor: pointer;
+    }
+    .log-section {
+        border-top: 1px solid #e2e8f0;
+        padding-top: 12px;
+    }
+    .log-list {
+        max-height: 150px;
+        overflow-y: auto;
+        font-size: 0.8rem;
+        color: #4a5568;
+        padding-left: 20px;
+        margin: 0;
+    }
+&lt;/style&gt;
 </head>
 <body>
 
 <div class="container">
-    <h1>サーナイト カウンター V7</h1>
+<h1>サーナイト カウンター V7.2</h1>
+
+&lt;div class="section-title"&gt;個体・環境設定&lt;/div&gt;
+&lt;div class="config-section"&gt;
+    &lt;div class="config-row"&gt;
+        &lt;label&gt;現在のレベル:&lt;/label&gt;
+        &lt;input type="number" id="pokemon-lvl" value="70" min="1" max="100" style="width: 60px;" onchange="updateCalculations()"&gt;
+    &lt;/div&gt;
+    &lt;div class="config-row"&gt;
+        &lt;label&gt;性格:&lt;/label&gt;
+        &lt;select id="nature" onchange="updateCalculations()"&gt;
+            &lt;option value="がんばりや" data-speed="0.0" data-skill="1.0" data-energy="1.0"&gt;がんばりや（無補正）&lt;/option&gt;
+            &lt;option value="すなお" data-speed="0.0" data-skill="1.0" data-energy="1.0"&gt;すなお（無補正）&lt;/option&gt;
+            &lt;option value="てれや" data-speed="0.0" data-skill="1.0" data-energy="1.0"&gt;てれや（無補正）&lt;/option&gt;
+            &lt;option value="きまぐれ" data-speed="0.0" data-skill="1.0" data-energy="1.0"&gt;きまぐれ（無補正）&lt;/option&gt;
+            &lt;option value="まじめ" data-speed="0.0" data-skill="1.0" data-energy="1.0"&gt;まじめ（無補正）&lt;/option&gt;
+            &lt;option value="さみしがり" data-speed="-0.1" data-skill="1.0" data-energy="0.8" selected&gt;さみしがり（おてつだいスピードUP・げんき回復量DOWN）&lt;/option&gt;
+            &lt;option value="いじっぱり" data-speed="-0.1" data-skill="1.0" data-energy="1.0"&gt;いじっぱり（おてつだいスピードUP・食材おてつだい確率DOWN）&lt;/option&gt;
+            &lt;option value="やんちゃ" data-speed="-0.1" data-skill="0.8" data-energy="1.0"&gt;やんちゃ（おてつだいスピードUP・メインスキル発生確率DOWN）&lt;/option&gt;
+            &lt;option value="ゆうかん" data-speed="-0.1" data-skill="1.0" data-energy="1.0"&gt;ゆうかん（おてつだいスピードUP・EXP獲得量DOWN）&lt;/option&gt;
+            &lt;option value="ずぶとい" data-speed="0.1" data-skill="1.0" data-energy="1.2"&gt;ずぶとい（げんき回復量UP・おてつだいスピードDOWN）&lt;/option&gt;
+            &lt;option value="わんぱく" data-speed="0.0" data-skill="1.0" data-energy="1.2"&gt;わんぱく（げんき回復量UP・食材おてつだい確率DOWN）&lt;/option&gt;
+            &lt;option value="のうてんき" data-speed="0.0" data-skill="0.8" data-energy="1.2"&gt;のうてんき（げんき回復量UP・メインスキル発生確率DOWN）&lt;/option&gt;
+            &lt;option value="のんき" data-speed="0.0" data-skill="1.0" data-energy="1.2"&gt;のんき（げんき回復量UP・EXP獲得量DOWN）&lt;/option&gt;
+            &lt;option value="ひかえめ" data-speed="0.1" data-skill="1.0" data-energy="1.0"&gt;ひかえめ（食材おてつだい確率UP・おてつだいスピードDOWN）&lt;/option&gt;
+            &lt;option value="おっとり" data-speed="0.0" data-skill="1.0" data-energy="0.8"&gt;おっとり（食材おてつだい確率UP・げんき回復量DOWN）&lt;/option&gt;
+            &lt;option value="うっかりや" data-speed="0.0" data-skill="0.8" data-energy="1.0"&gt;うっかりや（食材おてつだい確率UP・メインスキル発生確率DOWN）&lt;/option&gt;
+            &lt;option value="れいせい" data-speed="0.0" data-skill="1.0" data-energy="1.0"&gt;れいせい（食材おてつだい確率UP・EXP獲得量DOWN）&lt;/option&gt;
+            &lt;option value="おだやか" data-speed="0.1" data-skill="1.2" data-energy="1.0"&gt;おだやか（メインスキル発生確率UP・おてつだいスピードDOWN）&lt;/option&gt;
+            &lt;option value="おとなしい" data-speed="0.0" data-skill="1.2" data-energy="0.8"&gt;おとなしい（メインスキル発生確率UP・げんき回復量DOWN）&lt;/option&gt;
+            &lt;option value="しんちょう" data-speed="0.0" data-skill="1.2" data-energy="1.0"&gt;しんちょう（メインスキル発生確率UP・食材おてつだい確率DOWN）&lt;/option&gt;
+            &lt;option value="なまいき" data-speed="0.0" data-skill="1.2" data-energy="1.0"&gt;なまいき（メインスキル発生確率UP・EXP獲得量DOWN）&lt;/option&gt;
+            &lt;option value="おくびょう" data-speed="0.1" data-skill="1.0" data-energy="1.0"&gt;おくびょう（EXP獲得量UP・おてつだいスピードDOWN）&lt;/option&gt;
+            &lt;option value="せっかち" data-speed="0.0" data-skill="1.0" data-energy="0.8"&gt;せっかち（EXP獲得量UP・げんき回復量DOWN）&lt;/option&gt;
+            &lt;option value="ようき" data-speed="0.0" data-skill="1.0" data-energy="1.0"&gt;ようき（EXP獲得量UP・食材おてつだい確率DOWN）&lt;/option&gt;
+            &lt;option value="むじゃき" data-speed="0.0" data-skill="0.8" data-energy="1.0"&gt;むじゃき（EXP獲得量UP・メインスキル発生確率DOWN）&lt;/option&gt;
+        &lt;/select&gt;
+    &lt;/div&gt;
+    &lt;div class="config-row"&gt;
+        &lt;label&gt;サブスキル(確率):&lt;/label&gt;
+        &lt;div class="checkbox-group"&gt;
+            &lt;label&gt;&lt;input type="checkbox" id="sub-prob-m" checked onchange="updateCalculations()"&gt;確率M&lt;/label&gt;
+            &lt;label&gt;&lt;input type="checkbox" id="sub-prob-s" checked onchange="updateCalculations()"&gt;確率S&lt;/label&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="config-row"&gt;
+        &lt;label&gt;サブスキル(スピード):&lt;/label&gt;
+        &lt;div class="checkbox-group"&gt;
+            &lt;label&gt;&lt;input type="checkbox" id="sub-speed-m" checked onchange="updateCalculations()"&gt;スピM&lt;/label&gt;
+            &lt;label&gt;&lt;input type="checkbox" id="sub-speed-s" onchange="updateCalculations()"&gt;スピS&lt;/label&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="config-row"&gt;
+        &lt;label&gt;チームのおてつだいボーナス:&lt;/label&gt;
+        &lt;select id="team-otomo" onchange="updateCalculations()"&gt;
+            &lt;option value="0" selected&gt;なし (0枚)&lt;/option&gt;
+            &lt;option value="1"&gt;1枚 (5%)&lt;/option&gt;
+            &lt;option value="2"&gt;2枚 (10%)&lt;/option&gt;
+            &lt;option value="3"&gt;3枚 (15%)&lt;/option&gt;
+            &lt;option value="4"&gt;4枚 (20%)&lt;/option&gt;
+            &lt;option value="5"&gt;5枚 (25%)&lt;/option&gt;
+        &lt;/select&gt;
+    &lt;/div&gt;
+    &lt;div class="config-row"&gt;
+        &lt;label&gt;スキルレベル (回復量用):&lt;/label&gt;
+        &lt;select id="skill-lv" onchange="updateCalculations()"&gt;
+            &lt;option value="1"&gt;Lv1 (5)&lt;/option&gt;
+            &lt;option value="2"&gt;Lv2 (7)&lt;/option&gt;
+            &lt;option value="3"&gt;Lv3 (9)&lt;/option&gt;
+            &lt;option value="4"&gt;Lv4 (11)&lt;/option&gt;
+            &lt;option value="5"&gt;Lv5 (15)&lt;/option&gt;
+            &lt;option value="6" selected&gt;Lv6 (18)&lt;/option&gt;
+        &lt;/select&gt;
+    &lt;/div&gt;
+    &lt;div class="config-row"&gt;
+        &lt;label&gt;フィールド環境:&lt;/label&gt;
+        &lt;div class="checkbox-group"&gt;
+            &lt;label&gt;&lt;input type="checkbox" id="camp-ticket" onchange="updateCalculations()"&gt;いいキャンプチケ&lt;/label&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="config-row"&gt;
+        &lt;label&gt;EX好物:&lt;/label&gt;
+        &lt;div class="checkbox-group"&gt;
+            &lt;label&gt;&lt;input type="checkbox" id="ex-fav-minus" onchange="toggleExFav('minus')"&gt;－10％&lt;/label&gt;
+            &lt;label&gt;&lt;input type="checkbox" id="ex-fav-plus" onchange="toggleExFav('plus')"&gt;＋10％&lt;/label&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="config-row"&gt;
+        &lt;label&gt;EXバフ:&lt;/label&gt;
+        &lt;div class="checkbox-group"&gt;
+            &lt;label&gt;&lt;input type="checkbox" id="event-skill-buff" onchange="updateCalculations()"&gt;メインスキル発生確率 1.25倍&lt;/label&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
     
-    <div class="section-title">個体・環境設定</div>
-    <div class="config-section">
-        <div class="config-row">
-            <label>現在のレベル:</label>
-            <input type="number" id="pokemon-lvl" value="70" min="1" max="100" style="width: 60px;" onchange="updateCalculations()">
-        </div>
-        <div class="config-row">
-            <label>性格:</label>
-            <select id="nature" onchange="updateCalculations()">
-                <option value="がんばりや" data-speed="0.0" data-skill="1.0" data-energy="1.0">がんばりや（無補正）</option>
-                <option value="すなお" data-speed="0.0" data-skill="1.0" data-energy="1.0">すなお（無補正）</option>
-                <option value="てれや" data-speed="0.0" data-skill="1.0" data-energy="1.0">てれや（無補正）</option>
-                <option value="きまぐれ" data-speed="0.0" data-skill="1.0" data-energy="1.0">きまぐれ（無補正）</option>
-                <option value="まじめ" data-speed="0.0" data-skill="1.0" data-energy="1.0">まじめ（無補正）</option>
-                <option value="さみしがり" data-speed="-0.1" data-skill="1.0" data-energy="0.8" selected>さみしがり（おてつだいスピードUP・げんき回復量DOWN）</option>
-                <option value="いじっぱり" data-speed="-0.1" data-skill="1.0" data-energy="1.0">いじっぱり（おてつだいスピードUP・食材おてつだい確率DOWN）</option>
-                <option value="やんちゃ" data-speed="-0.1" data-skill="0.8" data-energy="1.0">やんちゃ（おてつだいスピードUP・メインスキル発生確率DOWN）</option>
-                <option value="ゆうかん" data-speed="-0.1" data-skill="1.0" data-energy="1.0">ゆうかん（おてつだいスピードUP・EXP獲得量DOWN）</option>
-                <option value="ずぶとい" data-speed="0.1" data-skill="1.0" data-energy="1.2">ずぶとい（げんき回復量UP・おてつだいスピードDOWN）</option>
-                <option value="わんぱく" data-speed="0.0" data-skill="1.0" data-energy="1.2">わんぱく（げんき回復量UP・食材おてつだい確率DOWN）</option>
-                <option value="のうてんき" data-speed="0.0" data-skill="0.8" data-energy="1.2">のうてんき（げんき回復量UP・メインスキル発生確率DOWN）</option>
-                <option value="のんき" data-speed="0.0" data-skill="1.0" data-energy="1.2">のんき（げんき回復量UP・EXP獲得量DOWN）</option>
-                <option value="ひかえめ" data-speed="0.1" data-skill="1.0" data-energy="1.0">ひかえめ（食材おてつだい確率UP・おてつだいスピードDOWN）</option>
-                <option value="おっとり" data-speed="0.0" data-skill="1.0" data-energy="0.8">おっとり（食材おてつだい確率UP・げんき回復量DOWN）</option>
-                <option value="うっかりや" data-speed="0.0" data-skill="0.8" data-energy="1.0">うっかりや（食材おてつだい確率UP・メインスキル発生確率DOWN）</option>
-                <option value="れいせい" data-speed="0.0" data-skill="1.0" data-energy="1.0">れいせい（食材おてつだい確率UP・EXP獲得量DOWN）</option>
-                <option value="おだやか" data-speed="0.1" data-skill="1.2" data-energy="1.0">おだやか（メインスキル発生確率UP・おてつだいスピードDOWN）</option>
-                <option value="おとなしい" data-speed="0.0" data-skill="1.2" data-energy="0.8">おとなしい（メインスキル発生確率UP・げんき回復量DOWN）</option>
-                <option value="しんちょう" data-speed="0.0" data-skill="1.2" data-energy="1.0">しんちょう（メインスキル発生確率UP・食材おてつだい確率DOWN）</option>
-                <option value="なまいき" data-speed="0.0" data-skill="1.2" data-energy="1.0">なまいき（メインスキル発生確率UP・EXP獲得量DOWN）</option>
-                <option value="おくびょう" data-speed="0.1" data-skill="1.0" data-energy="1.0">おくびょう（EXP獲得量UP・おてつだいスピードDOWN）</option>
-                <option value="せっかち" data-speed="0.0" data-skill="1.0" data-energy="0.8">せっかち（EXP獲得量UP・げんき回復量DOWN）</option>
-                <option value="ようき" data-speed="0.0" data-skill="1.0" data-energy="1.0">ようき（EXP獲得量UP・食材おてつだい確率DOWN）</option>
-                <option value="むじゃき" data-speed="0.0" data-skill="0.8" data-energy="1.0">むじゃき（EXP獲得量UP・メインスキル発生確率DOWN）</option>
-            </select>
-        </div>
-        <div class="config-row">
-            <label>サブスキル(確率):</label>
-            <div class="checkbox-group">
-                <label><input type="checkbox" id="sub-prob-m" checked onchange="updateCalculations()">確率M</label>
-                <label><input type="checkbox" id="sub-prob-s" checked onchange="updateCalculations()">確率S</label>
-            </div>
-        </div>
-        <div class="config-row">
-            <label>サブスキル(スピード):</label>
-            <div class="checkbox-group">
-                <label><input type="checkbox" id="sub-speed-m" checked onchange="updateCalculations()">スピM</label>
-                <label><input type="checkbox" id="sub-speed-s" onchange="updateCalculations()">スピS</label>
-            </div>
-        </div>
-        <div class="config-row">
-            <label>チームのおてつだいボーナス:</label>
-            <select id="team-otomo" onchange="updateCalculations()">
-                <option value="0" selected>なし (0枚)</option>
-                <option value="1">1枚 (5%)</option>
-                <option value="2">2枚 (10%)</option>
-                <option value="3">3枚 (15%)</option>
-                <option value="4">4枚 (20%)</option>
-                <option value="5">5枚 (25%)</option>
-            </select>
-        </div>
-        <div class="config-row">
-            <label>スキルレベル (回復量用):</label>
-            <select id="skill-lv" onchange="updateCalculations()">
-                <option value="1">Lv1 (5)</option>
-                <option value="2">Lv2 (7)</option>
-                <option value="3">Lv3 (9)</option>
-                <option value="4">Lv4 (11)</option>
-                <option value="5">Lv5 (15)</option>
-                <option value="6" selected>Lv6 (18)</option>
-            </select>
-        </div>
-        <div class="config-row">
-            <label>フィールド環境:</label>
-            <div class="checkbox-group">
-                <label><input type="checkbox" id="camp-ticket" onchange="updateCalculations()">いいキャンプチケ</label>
-            </div>
-        </div>
-        <div class="config-row">
-            <label>EX好物:</label>
-            <div class="checkbox-group">
-                <label><input type="checkbox" id="ex-fav-minus" onchange="toggleExFav('minus')">－10％</label>
-                <label><input type="checkbox" id="ex-fav-plus" onchange="toggleExFav('plus')">＋10％</label>
-            </div>
-        </div>
-        <div class="config-row">
-            <label>EXバフ:</label>
-            <div class="checkbox-group">
-                <label><input type="checkbox" id="event-skill-buff" onchange="updateCalculations()">メインスキル発生確率 1.25倍</label>
-            </div>
-        </div>
-        
-        <div style="border-top: 1px dashed #cbd5e0; padding-top: 12px; margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
-            <div style="white-space: nowrap; font-size: 0.95rem; font-weight: bold; color: #4a5568;">
-                時間: <span id="calculated-period" style="color: #2b6cb0;">--分--秒</span><span style="margin: 0 12px; color: #cbd5e0;">|</span>確率: <span id="calculated-prob" style="color: #2b6cb0;">--%</span>
-            </div>
-            <div style="white-space: nowrap; font-size: 0.9rem;">
-                1時間あたりのスキル期待値: <span id="hourly-exp" style="font-weight: bold;">0.00000</span>
-            </div>
-        </div>
-    </div>
+    &lt;div style="border-top: 1px dashed #cbd5e0; padding-top: 8px; margin-top: 8px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.9rem;"&gt;
+        &lt;div style="white-space: nowrap;"&gt;おてつだい時間: &lt;span id="calculated-period" style="font-weight: bold; color: #2b6cb0;"&gt;--分--秒&lt;/span&gt;&lt;/div&gt;
+        &lt;div style="white-space: nowrap;"&gt;スキル確率: &lt;span id="calculated-prob" style="font-weight: bold; color: #2b6cb0;"&gt;--%&lt;/span&gt;&lt;/div&gt;
+        &lt;div style="white-space: nowrap;"&gt;期待値/h: &lt;span id="hourly-exp" style="font-weight: bold;"&gt;0.00000&lt;/span&gt;&lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
 
-    <div class="section-title">げんき度リアルタイムシミュレート</div>
-    <div class="dashboard" style="grid-template-columns: 1fr 1fr; margin-bottom: 8px;">
-        <div class="stat-box energy-box" style="grid-column: span 1;">
-            <div>現在のげんき度</div>
-            <div class="stat-val energy" id="current-energy">---</div>
-        </div>
-        <div class="stat-box energy-box" style="grid-column: span 1;">
-            <div>80%を切る予測時刻</div>
-            <div class="stat-val" id="predict-time" style="font-size: 1.1rem; margin-top: 8px;">---</div>
-        </div>
-    </div>
-    <div class="config-row" style="margin-bottom: 16px; font-size: 0.85rem;">
-        <label>現在のげんき度を手動修正:</label>
-        <div style="display: flex; gap: 4px;">
-            <input type="number" id="manual-energy" value="100" style="width: 50px;">
-            <button onclick="setManualEnergy()" style="font-size: 0.75rem; padding: 2px 6px;">適用</button>
-        </div>
-    </div>
+&lt;div class="section-title"&gt;げんき度リアルタイムシミュレート&lt;/div&gt;
+&lt;div class="dashboard" style="grid-template-columns: 1fr 1fr; margin-bottom: 8px;"&gt;
+    &lt;div class="stat-box energy-box" style="grid-column: span 1;"&gt;
+        &lt;div&gt;現在のげんき度&lt;/div&gt;
+        &lt;div class="stat-val energy" id="current-energy"&gt;---&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="stat-box energy-box" style="grid-column: span 1;"&gt;
+        &lt;div&gt;80%を切る予測時刻&lt;/div&gt;
+        &lt;div class="stat-val" id="predict-time" style="font-size: 1.1rem; margin-top: 8px;"&gt;---&lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="config-row" style="margin-bottom: 16px; font-size: 0.85rem;"&gt;
+    &lt;label&gt;現在のげんき度を手動修正:&lt;/label&gt;
+    &lt;div style="display: flex; gap: 4px;"&gt;
+        &lt;input type="number" id="manual-energy" value="100" style="width: 50px;"&gt;
+        &lt;button onclick="setManualEnergy()" style="font-size: 0.75rem; padding: 2px 6px;"&gt;適用&lt;/button&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
 
-    <div class="section-title">スキル発発動統計</div>
-    <div class="dashboard">
-        <div class="stat-box">
-            <div>経過時間</div>
-            <div class="stat-val" id="elapsed-time">0.0h</div>
-        </div>
-        <div class="stat-box">
-            <div>現在の期待値</div>
-            <div class="stat-val" id="expected-count">0.00</div>
-        </div>
-        <div class="stat-box highlight">
-            <div>期待値との差分</div>
-            <div class="stat-val" id="diff-count">±0.00</div>
-        </div>
-    </div>
+&lt;div class="section-title"&gt;スキル発動統計&lt;/div&gt;
+&lt;div class="dashboard"&gt;
+    &lt;div class="stat-box"&gt;
+        &lt;div&gt;経過時間&lt;/div&gt;
+        &lt;div class="stat-val" id="elapsed-time"&gt;0.0h&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="stat-box"&gt;
+        &lt;div&gt;現在の期待値&lt;/div&gt;
+        &lt;div class="stat-val" id="expected-count"&gt;0.00&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="stat-box highlight"&gt;
+        &lt;div&gt;期待値との差分&lt;/div&gt;
+        &lt;div class="stat-val" id="diff-count"&gt;±0.00&lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
 
-    <button class="trigger-btn" onclick="recordSkill()">スキル発動！ (<span id="actual-count">0</span>)</button>
+&lt;button class="trigger-btn" onclick="recordSkill()"&gt;スキル発動！ (&lt;span id="actual-count"&gt;0&lt;/span&gt;)&lt;/button&gt;
 
-    <div class="control-btns">
-        <button onclick="startTracking()">計測開始 / 全リセット</button>
-    </div>
+&lt;div class="control-btns"&gt;
+    &lt;button onclick="startTracking()"&gt;計測開始 / 全リセット&lt;/button&gt;
+&lt;/div&gt;
 
-    <div class="log-section">
-        <div class="section-title">本日のログ</div>
-        <ul class="log-list" id="log-list"></ul>
-    </div>
+&lt;div class="log-section"&gt;
+    &lt;div class="section-title"&gt;本日のログ&lt;/div&gt;
+    &lt;ul class="log-list" id="log-list"&gt;&lt;/ul&gt;
+&lt;/div&gt;
 </div>
 
 <script>
-    let startTime = null;
-    let actualCount = 0;
-    let logs = [];
-    let lastEnergyUpdateIdxTime = null;
-    let baseEnergyVal = 100;
-    let timerInterval = null;
+let startTime = null;
+let actualCount = 0;
+let logs = [];
+let lastEnergyUpdateIdxTime = null;
+let baseEnergyVal = 100;
+let timerInterval = null;
 
-    // サーナイトの正しい基本値
-    const BASE_PERIOD = 2400; 
-    const BASE_PROB = 0.042;   
-    const HEAL_TABLE = { 1: 5, 2: 7, 3: 9, 4: 11, 5: 15, 6: 18 };
+const BASE_PERIOD = 2400; 
+const BASE_PROB = 0.042;   
+const HEAL_TABLE = { 1: 5, 2: 7, 3: 9, 4: 11, 5: 15, 6: 18 };
 
-    // EX好物チェックボックスの排他制御
-    function toggleExFav(type) {
-        if (type === 'minus' && document.getElementById('ex-fav-minus').checked) {
-            document.getElementById('ex-fav-plus').checked = false;
-        } else if (type === 'plus' && document.getElementById('ex-fav-plus').checked) {
-            document.getElementById('ex-fav-minus').checked = false;
-        }
-        updateCalculations();
+function toggleExFav(type) {
+    const minusEl = document.getElementById('ex-fav-minus');
+    const plusEl = document.getElementById('ex-fav-plus');
+    if (!minusEl || !plusEl) return;
+
+    if (type === 'minus' && minusEl.checked) {
+        plusEl.checked = false;
+    } else if (type === 'plus' && plusEl.checked) {
+        minusEl.checked = false;
+    }
+    updateCalculations();
+}
+
+function updateCalculations() {
+    const lvlEl = document.getElementById('pokemon-lvl');
+    const natureEl = document.getElementById('nature');
+    const subProbMEl = document.getElementById('sub-prob-m');
+    const subProbSEl = document.getElementById('sub-prob-s');
+    const subSpeedMEl = document.getElementById('sub-speed-m');
+    const subSpeedSEl = document.getElementById('sub-speed-s');
+    const teamOtomoEl = document.getElementById('team-otomo');
+    const campTicketEl = document.getElementById('camp-ticket');
+    const exFavMinusEl = document.getElementById('ex-fav-minus');
+    const exFavPlusEl = document.getElementById('ex-fav-plus');
+    const eventSkillBuffEl = document.getElementById('event-skill-buff');
+
+    if (!lvlEl || !natureEl || !subProbMEl || !subProbSEl || !subSpeedMEl || !subSpeedSEl || !teamOtomoEl || !campTicketEl || !exFavMinusEl || !exFavPlusEl || !eventSkillBuffEl) {
+        return; 
     }
 
-    function updateCalculations() {
-        // --- 1. おてつだい時間の計算 ---
-        const lvl = parseInt(document.getElementById('pokemon-lvl').value) || 1;
-        const lvlBonus = 1 - (lvl - 1) * 0.002;
+    const lvl = parseInt(lvlEl.value) || 1;
+    const lvlBonus = 1 - (lvl - 1) * 0.002;
 
-        const natureSelect = document.getElementById('nature');
-        const selectedNature = natureSelect.options[natureSelect.selectedIndex];
+    if (natureEl.selectedIndex === -1) return;
+    const selectedNature = natureEl.options[natureEl.selectedIndex];
+    if (!selectedNature) return;
+    
+    const natureSpeedBonus = parseFloat(selectedNature.getAttribute('data-speed')) || 0;
+    const natureSkillBonus = parseFloat(selectedNature.getAttribute('data-skill')) || 1;
+
+    let subSpeedActual = 0;
+    if (subSpeedMEl.checked) subSpeedActual -= 0.14;
+    if (subSpeedSEl.checked) subSpeedActual -= 0.07;
+    
+    const teamOtomo = parseInt(teamOtomoEl.value) || 0;
+    subSpeedActual -= (teamOtomo * 0.05);
+    if (subSpeedActual < -0.35) subSpeedActual = -0.35;
+
+    const gamePeriod = Math.floor(BASE_PERIOD * (1 + natureSpeedBonus) * (1 + subSpeedActual) * lvlBonus);
+    
+    const displayMin = Math.floor(gamePeriod / 60);
+    const displaySec = gamePeriod % 60;
+    
+    const periodEl = document.getElementById('calculated-period');
+    if (periodEl) periodEl.textContent = `${displayMin}分${displaySec}秒`;
+
+    let activePeriod = BASE_PERIOD * (1 + natureSpeedBonus) * (1 + subSpeedActual) * lvlBonus;
+
+    if (campTicketEl.checked) {
+        activePeriod = activePeriod / 1.2;
+    }
+
+    if (exFavMinusEl.checked) {
+        activePeriod = activePeriod * 0.90; 
+    } else if (exFavPlusEl.checked) {
+        activePeriod = activePeriod * 1.10; 
+    }
+
+    let subProbBonus = 0;
+    if (subProbMEl.checked) subProbBonus += 0.36;
+    if (subProbSEl.checked) subProbBonus += 0.18;
+
+    let finalProb = BASE_PROB * (1 + subProbBonus) * natureSkillBonus;
+    
+    if (eventSkillBuffEl.checked) {
+        finalProb = finalProb * 1.25;
+    }
+    
+    const probEl = document.getElementById('calculated-prob');
+    if (probEl) probEl.textContent = (finalProb * 100).toFixed(1) + "%";
+
+    const hourlyExp = (3600 / activePeriod) * finalProb;
+    const hourlyExpEl = document.getElementById('hourly-exp');
+    if (hourlyExpEl) hourlyExpEl.textContent = hourlyExp.toFixed(5);
+
+    updateDashboard();
+}
+
+function getLiveEnergy() {
+    if (!lastEnergyUpdateIdxTime) return baseEnergyVal;
+    const now = new Date();
+    const elapsedMinutes = (now - lastEnergyUpdateIdxTime) / (1000 * 60);
+    const dropAmount = elapsedMinutes / 10; 
+    return Math.max(0, baseEnergyVal - dropAmount);
+}
+
+function setManualEnergy() {
+    const val = parseFloat(document.getElementById('manual-energy').value);
+    if (!isNaN(val)) {
+        baseEnergyVal = Math.min(150, Math.max(0, val));
+        lastEnergyUpdateIdxTime = new Date();
+        addLog(`手動でげんき度を ${Math.floor(baseEnergyVal)}% に設定しました`);
+        updateDashboard();
+    }
+}
+
+function getHealAmount() {
+    const lv = parseInt(document.getElementById('skill-lv').value);
+    let heal = HEAL_TABLE[lv] || 5;
+    
+    const natureSelect = document.getElementById('nature');
+    if (!natureSelect || natureSelect.selectedIndex === -1) return heal;
+    const selectedNature = natureSelect.options[natureSelect.selectedIndex];
+    if (!selectedNature) return heal;
+
+    const natureEnergyBonus = parseFloat(selectedNature.getAttribute('data-energy')) || 1;
+    heal = Math.floor(heal * natureEnergyBonus); 
+    return heal;
+}
+
+function startTracking() {
+    if(confirm("すべての記録をリセットして新しく計測を開始しますか？")) {
+        startTime = new Date();
+        lastEnergyUpdateIdxTime = new Date();
+        baseEnergyVal = 100; 
+        actualCount = 0;
+        logs = [];
+        document.getElementById('log-list').innerHTML = "";
+        addLog("計測を開始しました (初期げんき度:100%)");
         
-        // 性格補正の取得
-        const natureSpeedBonus = parseFloat(selectedNature.getAttribute('data-speed'));
-        const natureSkillBonus = parseFloat(selectedNature.getAttribute('data-skill'));
-
-        // サブスキルのスピード補正
-        let subSpeedActual = 0;
-        if (document.getElementById('sub-speed-m').checked) subSpeedActual -= 0.14;
-        if (document.getElementById('sub-speed-s').checked) subSpeedActual -= 0.07;
+        if(timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(updateDashboard, 5000); 
         
-        // おてぼの枚数を取得してスピード補正に合算（上限-35%）
-        const teamOtomo = parseInt(document.getElementById('team-otomo').value);
-        subSpeedActual -= (teamOtomo * 0.05);
-        if (subSpeedActual < -0.35) subSpeedActual = -0.35;
+        updateCalculations();
+    }
+}
 
-        const gamePeriod = Math.floor(BASE_PERIOD * (1 + natureSpeedBonus) * (1 + subSpeedActual) * lvlBonus);
-        
-        const displayMin = Math.floor(gamePeriod / 60);
-        const displaySec = gamePeriod % 60;
-        document.getElementById('calculated-period').textContent = `${displayMin}分${displaySec}秒`;
+function recordSkill() {
+    if(!startTime) {
+        alert("先に「計測開始 / 全リセット」ボタンを押してください。");
+        return;
+    }
+    actualCount++;
+    
+    const beforeEnergy = getLiveEnergy();
+    const healAmount = getHealAmount();
+    const afterEnergy = Math.min(150, beforeEnergy + healAmount); 
+    
+    baseEnergyVal = afterEnergy;
+    lastEnergyUpdateIdxTime = new Date();
 
-        // 実際の稼働スピード（ここからフィールド系バフを乗算）
-        let activePeriod = BASE_PERIOD * (1 + natureSpeedBonus) * (1 + subSpeedActual) * lvlBonus;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    addLog(`${timeStr} スキル発動 (げんき: ${Math.floor(beforeEnergy)}% → ${Math.floor(afterEnergy)}%)`);
+    
+    updateDashboard();
+}
 
-        // いいキャンプチケット補正 (1.2倍速化)
-        if (document.getElementById('camp-ticket').checked) {
-            activePeriod = activePeriod / 1.2;
-        }
+function addLog(text) {
+    logs.unshift(text);
+    const list = document.getElementById('log-list');
+    if (list) list.innerHTML = logs.map(log =&gt; `&lt;li&gt;${log}&lt;/li&gt;`).join('');
+}
 
-        // EX好物の適用
-        if (document.getElementById('ex-fav-minus').checked) {
-            activePeriod = activePeriod * 0.90;
+function updateDashboard() {
+    if(!startTime) return;
+    
+    const now = new Date();
+    const elapsedHours = (now - startTime) / (1000 * 60 * 60);
+    
+    const hourlyExpEl = document.getElementById('hourly-exp');
+    if (!hourlyExpEl) return;
+    const hourlyExp = parseFloat(hourlyExpEl.textContent) || 0;
+    
+    const expected = elapsedHours * hourlyExp;
+    const diff = actualCount - expected;
+    
+    document.getElementById('elapsed-time').textContent = elapsedHours.toFixed(1) + "h";
+    document.getElementById('expected-count').textContent = expected.toFixed(2);
+    document.getElementById('actual-count').textContent = actualCount;
+    
+    const diffEl = document.getElementById('diff-count');
+    if(diff &gt;= 0) {
+        diffEl.textContent = `+${diff.toFixed(2)}`;
+        diffEl.className = "stat-val plus";
+    } else {
+        diffEl.textContent = `${diff.toFixed(2)}`;
+        diffEl.className = "stat-val minus";
+    }
+
+    const liveEnergy = getLiveEnergy();
+    document.getElementById('current-energy').textContent = Math.floor(liveEnergy) + "%";
+
+    const predictEl = document.getElementById('predict-time');
+    if (liveEnergy &lt;= 80) {
+        predictEl.textContent = "すでに80%未満";
+        predictEl.style.color = "#e53e3e";
+    } else {
+        const minutesTo80 = (liveEnergy - 80) * 10; 
+        const targetTime = new Date(now.getTime() + minutesTo80 * 60 * 1000);
+        predictEl.textContent = targetTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        predictEl.style.color = "#2d3748";
+    }
+}
+
+window.addEventListener('DOMContentLoaded', () =&gt; {
+    updateCalculations();
+});
+</script>
+
+</body>
+</html>
