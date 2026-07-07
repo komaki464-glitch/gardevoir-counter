@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>サーナイト スキル＆げんきカウンター V7.2</title>
+    <title>サーナイト スキル＆げんきカウンター V7</title>
     <style>
         :root {
             --primary-color: #68d391;
@@ -152,7 +152,7 @@
 <body>
 
 <div class="container">
-    <h1>サーナイト カウンター V7.2</h1>
+    <h1>サーナイト カウンター V7</h1>
     
     <div class="section-title">個体・環境設定</div>
     <div class="config-section">
@@ -246,4 +246,122 @@
             </div>
         </div>
         
-        <div style="border-top: 1px dashed #cbd5e0; padding-top: 8px;
+        <div style="border-top: 1px dashed #cbd5e0; padding-top: 12px; margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="white-space: nowrap; font-size: 0.95rem; font-weight: bold; color: #4a5568;">
+                時間: <span id="calculated-period" style="color: #2b6cb0;">--分--秒</span><span style="margin: 0 12px; color: #cbd5e0;">|</span>確率: <span id="calculated-prob" style="color: #2b6cb0;">--%</span>
+            </div>
+            <div style="white-space: nowrap; font-size: 0.9rem;">
+                1時間あたりのスキル期待値: <span id="hourly-exp" style="font-weight: bold;">0.00000</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-title">げんき度リアルタイムシミュレート</div>
+    <div class="dashboard" style="grid-template-columns: 1fr 1fr; margin-bottom: 8px;">
+        <div class="stat-box energy-box" style="grid-column: span 1;">
+            <div>現在のげんき度</div>
+            <div class="stat-val energy" id="current-energy">---</div>
+        </div>
+        <div class="stat-box energy-box" style="grid-column: span 1;">
+            <div>80%を切る予測時刻</div>
+            <div class="stat-val" id="predict-time" style="font-size: 1.1rem; margin-top: 8px;">---</div>
+        </div>
+    </div>
+    <div class="config-row" style="margin-bottom: 16px; font-size: 0.85rem;">
+        <label>現在のげんき度を手動修正:</label>
+        <div style="display: flex; gap: 4px;">
+            <input type="number" id="manual-energy" value="100" style="width: 50px;">
+            <button onclick="setManualEnergy()" style="font-size: 0.75rem; padding: 2px 6px;">適用</button>
+        </div>
+    </div>
+
+    <div class="section-title">スキル発発動統計</div>
+    <div class="dashboard">
+        <div class="stat-box">
+            <div>経過時間</div>
+            <div class="stat-val" id="elapsed-time">0.0h</div>
+        </div>
+        <div class="stat-box">
+            <div>現在の期待値</div>
+            <div class="stat-val" id="expected-count">0.00</div>
+        </div>
+        <div class="stat-box highlight">
+            <div>期待値との差分</div>
+            <div class="stat-val" id="diff-count">±0.00</div>
+        </div>
+    </div>
+
+    <button class="trigger-btn" onclick="recordSkill()">スキル発動！ (<span id="actual-count">0</span>)</button>
+
+    <div class="control-btns">
+        <button onclick="startTracking()">計測開始 / 全リセット</button>
+    </div>
+
+    <div class="log-section">
+        <div class="section-title">本日のログ</div>
+        <ul class="log-list" id="log-list"></ul>
+    </div>
+</div>
+
+<script>
+    let startTime = null;
+    let actualCount = 0;
+    let logs = [];
+    let lastEnergyUpdateIdxTime = null;
+    let baseEnergyVal = 100;
+    let timerInterval = null;
+
+    // サーナイトの正しい基本値
+    const BASE_PERIOD = 2400; 
+    const BASE_PROB = 0.042;   
+    const HEAL_TABLE = { 1: 5, 2: 7, 3: 9, 4: 11, 5: 15, 6: 18 };
+
+    // EX好物チェックボックスの排他制御
+    function toggleExFav(type) {
+        if (type === 'minus' && document.getElementById('ex-fav-minus').checked) {
+            document.getElementById('ex-fav-plus').checked = false;
+        } else if (type === 'plus' && document.getElementById('ex-fav-plus').checked) {
+            document.getElementById('ex-fav-minus').checked = false;
+        }
+        updateCalculations();
+    }
+
+    function updateCalculations() {
+        // --- 1. おてつだい時間の計算 ---
+        const lvl = parseInt(document.getElementById('pokemon-lvl').value) || 1;
+        const lvlBonus = 1 - (lvl - 1) * 0.002;
+
+        const natureSelect = document.getElementById('nature');
+        const selectedNature = natureSelect.options[natureSelect.selectedIndex];
+        
+        // 性格補正の取得
+        const natureSpeedBonus = parseFloat(selectedNature.getAttribute('data-speed'));
+        const natureSkillBonus = parseFloat(selectedNature.getAttribute('data-skill'));
+
+        // サブスキルのスピード補正
+        let subSpeedActual = 0;
+        if (document.getElementById('sub-speed-m').checked) subSpeedActual -= 0.14;
+        if (document.getElementById('sub-speed-s').checked) subSpeedActual -= 0.07;
+        
+        // おてぼの枚数を取得してスピード補正に合算（上限-35%）
+        const teamOtomo = parseInt(document.getElementById('team-otomo').value);
+        subSpeedActual -= (teamOtomo * 0.05);
+        if (subSpeedActual < -0.35) subSpeedActual = -0.35;
+
+        const gamePeriod = Math.floor(BASE_PERIOD * (1 + natureSpeedBonus) * (1 + subSpeedActual) * lvlBonus);
+        
+        const displayMin = Math.floor(gamePeriod / 60);
+        const displaySec = gamePeriod % 60;
+        document.getElementById('calculated-period').textContent = `${displayMin}分${displaySec}秒`;
+
+        // 実際の稼働スピード（ここからフィールド系バフを乗算）
+        let activePeriod = BASE_PERIOD * (1 + natureSpeedBonus) * (1 + subSpeedActual) * lvlBonus;
+
+        // いいキャンプチケット補正 (1.2倍速化)
+        if (document.getElementById('camp-ticket').checked) {
+            activePeriod = activePeriod / 1.2;
+        }
+
+        // EX好物の適用
+        if (document.getElementById('ex-fav-minus').checked) {
+            activePeriod = activePeriod * 0.90;
