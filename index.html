@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>サーナイト スキル＆げんきカウンター V5</title>
+    <title>サーナイト スキル＆げんきカウンター V6</title>
     <style>
         :root {
             --primary-color: #68d391;
@@ -152,7 +152,7 @@
 <body>
 
 <div class="container">
-    <h1>サーナイト カウンター V5</h1>
+    <h1>サーナイト カウンター V6</h1>
     
     <!-- 個体・環境設定 -->
     <div class="section-title">個体・環境設定</div>
@@ -239,18 +239,25 @@
                 <label><input type="checkbox" id="camp-ticket" onchange="updateCalculations()">いいキャンプチケ</label>
             </div>
         </div>
+        <!-- EXバフをきのみとスキル確率に完全分離 -->
         <div class="config-row">
-            <label>EXバフ状態:</label>
-            <select id="ex-buff" onchange="updateCalculations()">
-                <option value="none">なし</option>
-                <option value="buff">EXバフ (好物:時間-10%/確率1.25倍)</option>
-                <option value="debuff">EXデバフ (対象外:時間+15%/確率1.25倍)</option>
+            <label>フィールド補正 (きのみ):</label>
+            <select id="field-berry" onchange="updateCalculations()">
+                <option value="none" selected>通常 (なし)</option>
+                <option value="fav">好物きのみフィールド (時間-10%)</option>
+                <option value="not-fav">対象外フィールド (時間+15%)</option>
             </select>
+        </div>
+        <div class="config-row">
+            <label>イベント・スキルバフ:</label>
+            <div class="checkbox-group">
+                <label><input type="checkbox" id="event-skill-buff" onchange="updateCalculations()">メインスキル発生確率 1.25倍</label>
+            </div>
         </div>
         
         <!-- 連動ステータス表示 -->
         <div style="border-top: 1px dashed #cbd5e0; padding-top: 8px; margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
-            <div>ゲーム内おてつだい時間: <span id="calculated-period" style="font-weight: bold; color: #2b6cb0;">--分--秒</span></div>
+            <div>サーナイトのおてつだい時間: <span id="calculated-period" style="font-weight: bold; color: #2b6cb0;">--分--秒</span></div>
             <div>算出スキル確率: <span id="calculated-prob" style="font-weight: bold; color: #2b6cb0;">--%</span></div>
             <div style="grid-column: span 2; margin-top: 4px;">1時間あたりのスキル期待値: <span id="hourly-exp" style="font-weight: bold;">0.00000</span></div>
         </div>
@@ -293,7 +300,7 @@
         </div>
     </div>
 
-    <!-- メインボタン -->
+    <!-- メメインボタン -->
     <button class="trigger-btn" onclick="recordSkill()">スキル発動！ (<span id="actual-count">0</span>)</button>
 
     <div class="control-btns">
@@ -328,42 +335,43 @@
         const natureSelect = document.getElementById('nature');
         const selectedNature = natureSelect.options[natureSelect.selectedIndex];
         
-        // 性格補正の取得 (parseFloatで文字列を数値に変換)
+        // 性格補正の取得
         const natureSpeedBonus = parseFloat(selectedNature.getAttribute('data-speed'));
         const natureSkillBonus = parseFloat(selectedNature.getAttribute('data-skill'));
-        const natureEnergyBonus = parseFloat(selectedNature.getAttribute('data-energy'));
 
-        // サブスキル＆おてボのスピード補正 (加算方式、上限-35%)
-        let subSpeedBonus = 0;
-        if (document.getElementById('sub-speed-m').checked) subSpeedBonus -= 0.14;
-        if (document.getElementById('sub-speed-s').checked) subSpeedBonus -= 0.07;
-        const teamOtomo = parseInt(document.getElementById('team-otomo').value);
-        subSpeedBonus -= (teamOtomo * 0.05);
+        // サブスキルのスピード補正 (画面表示用：おてボを含めない)
+        let subSpeedDisplay = 0;
+        if (document.getElementById('sub-speed-m').checked) subSpeedDisplay -= 0.14;
+        if (document.getElementById('sub-speed-s').checked) subSpeedDisplay -= 0.07;
 
-        if (subSpeedBonus < -0.35) subSpeedBonus = -0.35;
-
-        // ゲーム内表記時間の計算 (性格とサブスキルは別々に「乗算」される)
-        const gamePeriod = Math.floor(BASE_PERIOD * (1 + natureSpeedBonus) * (1 + subSpeedBonus) * lvlBonus);
+        // 【表示用】「サーナイトのおてつだい時間」（おてボを含めずゲーム内プロフィール画面に一致させる）
+        const gamePeriod = Math.floor(BASE_PERIOD * (1 + natureSpeedBonus) * (1 + subSpeedDisplay) * lvlBonus);
         
-        // 画面表示用
         const displayMin = Math.floor(gamePeriod / 60);
         const displaySec = gamePeriod % 60;
         document.getElementById('calculated-period').textContent = `${displayMin}分${displaySec}秒`;
 
-        // チケットやEXバフを乗算（実際の稼働スピード用）
-        let activePeriod = gamePeriod;
+        // 【内部計算用】実際の稼働スピード（ここにおてボを反映、上限-35%を適用）
+        let subSpeedActual = subSpeedDisplay;
+        const teamOtomo = parseInt(document.getElementById('team-otomo').value);
+        subSpeedActual -= (teamOtomo * 0.05);
+
+        if (subSpeedActual < -0.35) subSpeedActual = -0.35;
+
+        // 実際のベース時間算出（性格とサブスキルの乗算）
+        let activePeriod = BASE_PERIOD * (1 + natureSpeedBonus) * (1 + subSpeedActual) * lvlBonus;
+
+        // いいキャンプチケット補正 (1.2倍速化)
         if (document.getElementById('camp-ticket').checked) {
             activePeriod = activePeriod / 1.2;
         }
 
-        const exBuff = document.getElementById('ex-buff').value;
-        let exProbMultiplier = 1.0;
-        if (exBuff === 'buff') {
-            activePeriod = activePeriod * 0.90; 
-            exProbMultiplier = 1.25;
-        } else if (exBuff === 'debuff') {
-            activePeriod = activePeriod * 1.15; 
-            exProbMultiplier = 1.25;
+        // フィールド補正（きのみ）の適用（独立化）
+        const fieldBerry = document.getElementById('field-berry').value;
+        if (fieldBerry === 'fav') {
+            activePeriod = activePeriod * 0.90; // 好物フィールド: 10%短縮
+        } else if (fieldBerry === 'not-fav') {
+            activePeriod = activePeriod * 1.15; // 対象外フィールド: 15%延長
         }
 
         // --- 2. スキル確率の計算 ---
@@ -371,7 +379,13 @@
         if (document.getElementById('sub-prob-m').checked) subProbBonus += 0.36;
         if (document.getElementById('sub-prob-s').checked) subProbBonus += 0.18;
 
-        const finalProb = BASE_PROB * (1 + subProbBonus) * natureSkillBonus * exProbMultiplier;
+        let finalProb = BASE_PROB * (1 + subProbBonus) * natureSkillBonus;
+        
+        // イベント・スキルバフの適用（1.25倍独立化）
+        if (document.getElementById('event-skill-buff').checked) {
+            finalProb = finalProb * 1.25;
+        }
+        
         document.getElementById('calculated-prob').textContent = (finalProb * 100).toFixed(1) + "%";
 
         // --- 3. 1時間あたりの期待値 ---
