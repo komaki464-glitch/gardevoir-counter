@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>サーナイト スキルカウンター</title>
+    <title>サーナイト スキル＆げんきカウンター</title>
     <style>
         :root {
             --primary-color: #68d391;
@@ -16,7 +16,7 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 16px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -27,107 +27,121 @@
             background: var(--card-bg);
             border-radius: 16px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            padding: 20px;
+            padding: 16px;
             box-sizing: border-box;
         }
         h1 {
             font-size: 1.2rem;
             text-align: center;
             margin-top: 0;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             color: #4a5568;
+        }
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #4a5568;
+            margin-bottom: 8px;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 6px;
         }
         .config-section {
             background: #edf2f7;
             padding: 12px;
             border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
+            margin-bottom: 16px;
+            font-size: 0.85rem;
         }
         .config-row {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             margin-bottom: 8px;
         }
         .config-row:last-child { margin-bottom: 0; }
-        .config-row input {
-            width: 80px;
-            text-align: right;
+        select, input[type="number"] {
+            padding: 4px;
             border: 1px solid #cbd5e0;
             border-radius: 4px;
-            padding: 2px 4px;
+            background: white;
+            font-size: 0.85rem;
+        }
+        .checkbox-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
         .dashboard {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
+            gap: 8px;
+            margin-bottom: 16px;
         }
         .stat-box {
             background: #f7fafc;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
-            padding: 12px;
+            padding: 10px;
             text-align: center;
+            font-size: 0.8rem;
         }
         .stat-box.highlight {
             grid-column: span 2;
             background: #ebf8ff;
             border-color: #bee3f8;
         }
+        .stat-box.energy-box {
+            grid-column: span 2;
+            background: #fffaf0;
+            border-color: #feebc8;
+        }
         .stat-val {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: bold;
             margin-top: 4px;
         }
         .stat-val.plus { color: #38a169; }
         .stat-val.minus { color: #e53e3e; }
+        .stat-val.energy { color: #dd6b20; }
         
         .trigger-btn {
             width: 100%;
-            height: 80px;
+            height: 70px;
             background: var(--primary-color);
             color: white;
             border: none;
             border-radius: 12px;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 4px 14px rgba(104, 211, 145, 0.4);
             transition: transform 0.1s;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
-        .trigger-btn:active {
-            transform: scale(0.98);
-        }
+        .trigger-btn:active { transform: scale(0.98); }
+        
         .control-btns {
             display: flex;
             gap: 8px;
+            margin-bottom: 16px;
         }
         .control-btns button {
             flex: 1;
-            padding: 10px;
+            padding: 8px;
             border: 1px solid #cbd5e0;
             background: white;
             border-radius: 6px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             cursor: pointer;
         }
         .log-section {
-            margin-top: 20px;
             border-top: 1px solid #e2e8f0;
             padding-top: 12px;
         }
-        .log-title {
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #718096;
-            margin-bottom: 8px;
-        }
         .log-list {
-            max-height: 120px;
+            max-height: 150px;
             overflow-y: auto;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #4a5568;
             padding-left: 20px;
             margin: 0;
@@ -137,23 +151,98 @@
 <body>
 
 <div class="container">
-    <h1>サーナイト スキルカウンター</h1>
+    <h1>サーナイト カウンター V2</h1>
     
+    <div class="section-title">個体・環境設定</div>
     <div class="config-section">
         <div class="config-row">
-            <label>おてつだい周期 (秒):</label>
-            <input type="number" id="period" value="2200" onchange="updateCalculations()">
+            <label>性格補正:</label>
+            <select id="nature" onchange="updateCalculations()">
+                <option value="none">無補正</option>
+                <option value="speed_up">おてつだいスピード ＋</option>
+                <option value="speed_down">おてつだいスピード －</option>
+                <option value="prob_up">スキル発動確率 ＋</option>
+                <option value="prob_down">スキル発動確率 －</option>
+                <option value="bdaya">おだやか (確率＋/スピード－)</option>
+                <option value="energy_down">げんき回復量 － (おっとり等)</option>
+            </select>
         </div>
         <div class="config-row">
-            <label>スキル発動確率 (%):</label>
-            <input type="number" id="prob" value="4.0" step="0.1" onchange="updateCalculations()">
+            <label>サブスキル(確率):</label>
+            <div class="checkbox-group">
+                <label><input type="checkbox" id="sub-prob-m" onchange="updateCalculations()">確率M</label>
+                <label><input type="checkbox" id="sub-prob-s" onchange="updateCalculations()">確率S</label>
+            </div>
         </div>
         <div class="config-row">
-            <label>1時間の期待値:</label>
-            <span id="hourly-exp">0.065</span>
+            <label>サブスキル(スピード):</label>
+            <div class="checkbox-group">
+                <label><input type="checkbox" id="sub-speed-m" onchange="updateCalculations()">スピM</label>
+                <label><input type="checkbox" id="sub-speed-s" onchange="updateCalculations()">スピS</label>
+            </div>
+        </div>
+        <div class="config-row">
+            <label>おてつだいボーナス:</label>
+            <select id="sub-otomo" onchange="updateCalculations()">
+                <option value="0">なし</option>
+                <option value="1">1枚 (5%)</option>
+                <option value="2">2枚 (10%)</option>
+                <option value="3">3枚 (15%)</option>
+                <option value="4">4枚 (20%)</option>
+                <option value="5">5枚 (25%)</option>
+            </select>
+        </div>
+        <div class="config-row">
+            <label>スキルレベル (回復量用):</label>
+            <select id="skill-lv" onchange="updateCalculations()">
+                <option value="1">Lv1 (5)</option>
+                <option value="2">Lv2 (7)</option>
+                <option value="3">Lv3 (9)</option>
+                <option value="4">Lv4 (11)</option>
+                <option value="5">Lv5 (15)</option>
+                <option value="6" selected>Lv6 (18)</option>
+            </select>
+        </div>
+        <div class="config-row">
+            <label>フィールド環境:</label>
+            <div class="checkbox-group">
+                <label><input type="checkbox" id="camp-ticket" onchange="updateCalculations()">いいキャンプチケ</label>
+            </div>
+        </div>
+        <div class="config-row">
+            <label>EXバフ状態:</label>
+            <select id="ex-buff" onchange="updateCalculations()">
+                <option value="none">なし</option>
+                <option value="buff">EXバフ (好物:時間-10%/確率1.25倍)</option>
+                <option value="debuff">EXデバフ (対象外:時間+15%/確率1.25倍)</option>
+            </select>
+        </div>
+        <div class="config-row" style="border-top: 1px dashed #cbd5e0; padding-top: 6px; margin-top: 6px;">
+            <span>算出された1時間期待値:</span>
+            <span id="hourly-exp" style="font-weight: bold;">0.0000</span>
         </div>
     </div>
 
+    <div class="section-title">げんき度リアルタイムシミュレート</div>
+    <div class="dashboard" style="grid-template-columns: 1fr 1fr; margin-bottom: 8px;">
+        <div class="stat-box energy-box" style="grid-column: span 1;">
+            <div>現在のげんき度</div>
+            <div class="stat-val energy" id="current-energy">---</div>
+        </div>
+        <div class="stat-box energy-box" style="grid-column: span 1;">
+            <div>80%を切る予測時刻</div>
+            <div class="stat-val" id="predict-time" style="font-size: 1.1rem; margin-top: 8px;">---</div>
+        </div>
+    </div>
+    <div class="config-row" style="margin-bottom: 16px; font-size: 0.85rem;">
+        <label>現在のげんき度を手動修正:</label>
+        <div style="display: flex; gap: 4px;">
+            <input type="number" id="manual-energy" value="100" style="width: 50px;">
+            <button onclick="setManualEnergy()" style="font-size: 0.75rem; padding: 2px 6px;">適用</button>
+        </div>
+    </div>
+
+    <div class="section-title">スキル発動統計</div>
     <div class="dashboard">
         <div class="stat-box">
             <div>経過時間</div>
@@ -172,44 +261,125 @@
     <button class="trigger-btn" onclick="recordSkill()">スキル発動！ (<span id="actual-count">0</span>)</button>
 
     <div class="control-btns">
-        <button onclick="startTracking()">計測開始/リセット</button>
+        <button onclick="startTracking()">計測開始 / 全リセット</button>
     </div>
 
     <div class="log-section">
-        <div class="log-title">本日の発動履歴</div>
-        <ul class="log-list" id="log-list">
-            </ul>
+        <div class="section-title">本日のログ</div>
+        <ul class="log-list" id="log-list"></ul>
     </div>
 </div>
 
 <script>
+    // 状態管理変数
     let startTime = null;
     let actualCount = 0;
-    let timerInterval = null;
     let logs = [];
+    let lastEnergyUpdateIdxTime = null;
+    let baseEnergyVal = 100;
+    let timerInterval = null;
 
-    // 初期化と計算
+    // 定数ベース値
+    const BASE_PERIOD = 2600; // サーナイト基本おてつだい時間
+    const BASE_PROB = 0.04;   // 基本スキル確率 4.0%
+
+    // 各スキルレベルの基本回復量
+    const HEAL_TABLE = { 1: 5, 2: 7, 3: 9, 4: 11, 5: 15, 6: 18 };
+
     function updateCalculations() {
-        const period = parseFloat(document.getElementById('period').value);
-        const prob = parseFloat(document.getElementById('prob').value) / 100;
+        // 1. おてつだいスピード補正の計算
+        let speedBonus = 0;
+        if (document.getElementById('sub-speed-m').checked) speedBonus -= 0.14;
+        if (document.getElementById('sub-speed-s').checked) speedBonus -= 0.07;
         
-        // 1時間あたりの補正後おてつだい回数 × 確率
-        const hourlyExp = (3600 / period) * prob;
-        document.getElementById('hourly-exp').textContent = hourlyExp.toFixed(4);
-        
+        const otomoBonus = parseInt(document.getElementById('sub-otomo').value);
+        speedBonus -= (otomoBonus * 0.05);
+
+        const nature = document.getElementById('nature').value;
+        if (nature === 'speed_up') speedBonus -= 0.10;
+        if (nature === 'speed_down' || nature === 'bdaya') speedBonus += 0.10;
+
+        // ゲーム内上限（35%短縮まで）の丸め処理
+        if (speedBonus < -0.35) speedBonus = -0.35;
+
+        // 実際の周期計算
+        let finalPeriod = BASE_PERIOD * (1 + speedBonus);
+
+        // いいキャンプチケット補正 (乗算)
+        if (document.getElementById('camp-ticket').checked) {
+            finalPeriod = finalPeriod / 1.2;
+        }
+
+        // EXバフ補正 (おてつだい時間への乗算)
+        const exBuff = document.getElementById('ex-buff').value;
+        let exProbMultiplier = 1.0;
+        if (exBuff === 'buff') {
+            finalPeriod = finalPeriod * 0.90; // 10%短縮
+            exProbMultiplier = 1.25;
+        } else if (exBuff === 'debuff') {
+            finalPeriod = finalPeriod * 1.15; // 15%延長
+            exProbMultiplier = 1.25;
+        }
+
+        // 2. スキル確率補正の計算
+        let probMultiplier = 1.0;
+        if (document.getElementById('sub-prob-m').checked) probMultiplier += 0.36;
+        if (document.getElementById('sub-prob-s').checked) probMultiplier += 0.18;
+
+        if (nature === 'prob_up' || nature === 'bdaya') probMultiplier *= 1.2;
+        if (nature === 'prob_down') probMultiplier *= 0.8;
+
+        const finalProb = BASE_PROB * probMultiplier * exProbMultiplier;
+
+        // 3. 1時間あたりの期待値算出
+        const hourlyExp = (3600 / finalPeriod) * finalProb;
+        document.getElementById('hourly-exp').textContent = hourlyExp.toFixed(5);
+
         updateDashboard();
     }
 
+    // リアルタイムなげんき度の取得
+    function getLiveEnergy() {
+        if (!lastEnergyUpdateIdxTime) return baseEnergyVal;
+        const now = new Date();
+        const elapsedMinutes = (now - lastEnergyUpdateIdxTime) / (1000 * 60);
+        const dropAmount = elapsedMinutes / 10; // 10分で1減少
+        const currentCalculated = baseEnergyVal - dropAmount;
+        return Math.max(0, currentCalculated);
+    }
+
+    function setManualEnergy() {
+        const val = parseFloat(document.getElementById('manual-energy').value);
+        if (!isNaN(val)) {
+            baseEnergyVal = Math.min(150, Math.max(0, val));
+            lastEnergyUpdateIdxTime = new Date();
+            addLog(`手動でげんき度を ${Math.floor(baseEnergyVal)}% に設定しました`);
+            updateDashboard();
+        }
+    }
+
+    function getHealAmount() {
+        const lv = parseInt(document.getElementById('skill-lv').value);
+        let heal = HEAL_TABLE[lv] || 5;
+        const nature = document.getElementById('nature').value;
+        if (nature === 'energy_down') {
+            heal = Math.floor(heal * 0.8); // げんき回復量ダウン補正
+        }
+        return heal;
+    }
+
     function startTracking() {
-        if(confirm("データをリセットして新しく計測を開始しますか？")) {
+        if(confirm("すべての記録をリセットして新しく計測を開始しますか？")) {
             startTime = new Date();
+            lastEnergyUpdateIdxTime = new Date();
+            baseEnergyVal = 100; // 開始時は100%想定
             actualCount = 0;
             logs = [];
             document.getElementById('log-list').innerHTML = "";
-            addLog("計測を開始しました");
+            addLog("計測を開始しました (初期げんき度:100%)");
             
             if(timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(updateDashboard, 10000); // 10秒ごとに更新
+            timerInterval = setInterval(updateDashboard, 5000); // 5秒ごとに表示更新
             
             updateDashboard();
         }
@@ -217,13 +387,23 @@
 
     function recordSkill() {
         if(!startTime) {
-            alert("先に「計測開始/リセット」ボタンを押してください。");
+            alert("先に「計測開始 / 全リセット」ボタンを押してください。");
             return;
         }
         actualCount++;
+        
+        // げんき回復の計算
+        const beforeEnergy = getLiveEnergy();
+        const healAmount = getHealAmount();
+        const afterEnergy = Math.min(150, beforeEnergy + healAmount); // 上限150%
+        
+        baseEnergyVal = afterEnergy;
+        lastEnergyUpdateIdxTime = new Date();
+
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        addLog(`${timeStr} スキル発動`);
+        addLog(`${timeStr} スキル発動 (げんき: ${Math.floor(beforeEnergy)}% → ${Math.floor(afterEnergy)}%)`);
+        
         updateDashboard();
     }
 
@@ -255,9 +435,25 @@
             diffEl.textContent = `${diff.toFixed(2)}`;
             diffEl.className = "stat-val minus";
         }
+
+        // げんき度表示の更新
+        const liveEnergy = getLiveEnergy();
+        document.getElementById('current-energy').textContent = Math.floor(liveEnergy) + "%";
+
+        // 80%を切る時間の予測
+        const predictEl = document.getElementById('predict-time');
+        if (liveEnergy <= 80) {
+            predictEl.textContent = "すでに80%未満";
+            predictEl.style.color = "#e53e3e";
+        } else {
+            const minutesTo80 = (liveEnergy - 80) * 10; // 1%下がるのに10分
+            const targetTime = new Date(now.getTime() + minutesTo80 * 60 * 1000);
+            predictEl.textContent = targetTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            predictEl.style.color = "#2d3748";
+        }
     }
 
-    // 最初に計算を走らせる
+    // 初期起動時
     updateCalculations();
 </script>
 
