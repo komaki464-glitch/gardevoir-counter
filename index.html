@@ -72,93 +72,98 @@
     </div>
   </div>
 
-  <!-- ▼ 個体・環境設定 -->
+ <!-- ▼ 個体・環境設定 -->
   <div class="section-title">個体・環境設定</div>
   <div class="box">
-    <div class="row">
-      <label>現在のレベル:</label>
-      <input type="number" id="pokemon-lvl" value="70" min="1" max="100" style="width:60px;" onchange="updateCalculations();saveConfig();">
-    </div>
-    <div class="row">
-      <label>性格:</label>
-      <select id="nature" onchange="updateCalculations();saveConfig();">
-        <option value="がんばりや" data-speed="0.0" data-skill="1.0" data-energy="1.0">がんばりや（無補正）</option>
-        <option value="すなお" data-speed="0.0" data-skill="1.0" data-energy="1.0">すなお（無補正）</option>
-        <option value="てれや" data-speed="0.0" data-skill="1.0" data-energy="1.0">てれや（無補正）</option>
-        <option value="きまぐれ" data-speed="0.0" data-skill="1.0" data-energy="1.0">きまぐれ（無補正）</option>
-        <option value="まじめ" data-speed="0.0" data-skill="1.0" data-energy="1.0">まじめ（無補正）</option>
-        <option value="さみしがり" data-speed="-0.1" data-skill="1.0" data-energy="0.8" selected>さみしがり（スピUP・げんきDOWN）</option>
-        <option value="いじっぱり" data-speed="-0.1" data-skill="1.0" data-energy="1.0">いじっぱり（スピUP・食材DOWN）</option>
-        <option value="やんちゃ" data-speed="-0.1" data-skill="0.8" data-energy="1.0">やんちゃ（スピUP・スキルDOWN）</option>
-        <option value="ゆうかん" data-speed="-0.1" data-skill="1.0" data-energy="1.0">ゆうかん（スピUP・EXPDOWN）</option>
-        <option value="ずぶとい" data-speed="0.1" data-skill="1.0" data-energy="1.2">ずぶとい（げんきUP・スピDOWN）</option>
-        <option value="わんぱく" data-speed="0.0" data-skill="1.0" data-energy="1.2">わんぱく（げんきUP・食材DOWN）</option>
-        <option value="のうてんき" data-speed="0.0" data-skill="0.8" data-energy="1.2">のうてんき（げんきUP・スキルDOWN）</option>
-        <option value="のんき" data-speed="0.0" data-skill="1.0" data-energy="1.2">のんき（げんきUP・EXPDOWN）</option>
-        <option value="ひかえめ" data-speed="0.1" data-skill="1.0" data-energy="1.0">ひかえめ（食材UP・スピDOWN）</option>
-        <option value="おっとり" data-speed="0.0" data-skill="1.0" data-energy="0.8">おっとり（食材UP・げんきDOWN）</option>
-        <option value="うっかりや" data-speed="0.0" data-skill="0.8" data-energy="1.0">うっかりや（食材UP・スキルDOWN）</option>
-        <option value="れいせい" data-speed="0.0" data-skill="1.0" data-energy="1.0">れいせい（食材UP・EXPDOWN）</option>
-        <option value="おだやか" data-speed="0.1" data-skill="1.2" data-energy="1.0">おだやか（スキルUP・スピDOWN）</option>
-        <option value="おとなしい" data-speed="0.0" data-skill="1.2" data-energy="0.8">おとなしい（スキルUP・げんきDOWN）</option>
-        <option value="しんちょう" data-speed="0.0" data-skill="1.2" data-energy="1.0">しんちょう（スキルUP・食材DOWN）</option>
-        <option value="なまいき" data-speed="0.0" data-skill="1.2" data-energy="1.0">なまいき（スキルUP・EXPDOWN）</option>
-        <option value="おくびょう" data-speed="0.1" data-skill="1.0" data-energy="1.0">おくびょう（EXPUP・スピDOWN）</option>
-        <option value="せっかち" data-speed="0.0" data-skill="1.0" data-energy="0.8">せっかち（EXPUP・げんきDOWN）</option>
-        <option value="ようき" data-speed="0.0" data-skill="1.0" data-energy="1.0">ようき（EXPUP・食材DOWN）</option>
-        <option value="むじゃき" data-speed="0.0" data-skill="0.8" data-energy="1.0">むじゃき（EXPUP・スキルDOWN）</option>
-      </select>
-    </div>
-    <div class="row">
-      <label>サブスキル(確率):</label>
-      <div class="chk-group">
-        <label><input type="checkbox" id="sub-prob-m" checked onchange="updateCalculations();saveConfig();">確率M</label>
-        <label><input type="checkbox" id="sub-prob-s" checked onchange="updateCalculations();saveConfig();">確率S</label>
+    <details id="config-details">
+      <summary style="cursor:pointer;font-weight:bold;color:#4a5568;margin-bottom:8px;">▼ 設定を開く / 閉じる</summary>
+      <div style="margin-top:10px;">
+        <div class="row">
+          <label>現在のレベル:</label>
+          <input type="number" id="pokemon-lvl" value="70" min="1" max="100" style="width:60px;" onchange="updateCalculations();saveConfig();">
+        </div>
+        <div class="row">
+          <label>性格:</label>
+          <select id="nature" onchange="updateCalculations();saveConfig();">
+            <option value="がんばりや" data-speed="0.0" data-skill="1.0" data-energy="1.0">がんばりや（無補正）</option>
+            <option value="すなお" data-speed="0.0" data-skill="1.0" data-energy="1.0">すなお（無補正）</option>
+            <option value="てれや" data-speed="0.0" data-skill="1.0" data-energy="1.0">てれや（無補正）</option>
+            <option value="きまぐれ" data-speed="0.0" data-skill="1.0" data-energy="1.0">きまぐれ（無補正）</option>
+            <option value="まじめ" data-speed="0.0" data-skill="1.0" data-energy="1.0">まじめ（無補正）</option>
+            <option value="さみしがり" data-speed="-0.1" data-skill="1.0" data-energy="0.8" selected>さみしがり（スピUP・げんきDOWN）</option>
+            <option value="いじっぱり" data-speed="-0.1" data-skill="1.0" data-energy="1.0">いじっぱり（スピUP・食材DOWN）</option>
+            <option value="やんちゃ" data-speed="-0.1" data-skill="0.8" data-energy="1.0">やんちゃ（スピUP・スキルDOWN）</option>
+            <option value="ゆうかん" data-speed="-0.1" data-skill="1.0" data-energy="1.0">ゆうかん（スピUP・EXPDOWN）</option>
+            <option value="ずぶとい" data-speed="0.1" data-skill="1.0" data-energy="1.2">ずぶとい（げんきUP・スピDOWN）</option>
+            <option value="わんぱく" data-speed="0.0" data-skill="1.0" data-energy="1.2">わんぱく（げんきUP・食材DOWN）</option>
+            <option value="のうてんき" data-speed="0.0" data-skill="0.8" data-energy="1.2">のうてんき（げんきUP・スキルDOWN）</option>
+            <option value="のんき" data-speed="0.0" data-skill="1.0" data-energy="1.2">のんき（げんきUP・EXPDOWN）</option>
+            <option value="ひかえめ" data-speed="0.1" data-skill="1.0" data-energy="1.0">ひかえめ（食材UP・スピDOWN）</option>
+            <option value="おっとり" data-speed="0.0" data-skill="1.0" data-energy="0.8">おっとり（食材UP・げんきDOWN）</option>
+            <option value="うっかりや" data-speed="0.0" data-skill="0.8" data-energy="1.0">うっかりや（食材UP・スキルDOWN）</option>
+            <option value="れいせい" data-speed="0.0" data-skill="1.0" data-energy="1.0">れいせい（食材UP・EXPDOWN）</option>
+            <option value="おだやか" data-speed="0.1" data-skill="1.2" data-energy="1.0">おだやか（スキルUP・スピDOWN）</option>
+            <option value="おとなしい" data-speed="0.0" data-skill="1.2" data-energy="0.8">おとなしい（スキルUP・げんきDOWN）</option>
+            <option value="しんちょう" data-speed="0.0" data-skill="1.2" data-energy="1.0">しんちょう（スキルUP・食材DOWN）</option>
+            <option value="なまいき" data-speed="0.0" data-skill="1.2" data-energy="1.0">なまいき（スキルUP・EXPDOWN）</option>
+            <option value="おくびょう" data-speed="0.1" data-skill="1.0" data-energy="1.0">おくびょう（EXPUP・スピDOWN）</option>
+            <option value="せっかち" data-speed="0.0" data-skill="1.0" data-energy="0.8">せっかち（EXPUP・げんきDOWN）</option>
+            <option value="ようき" data-speed="0.0" data-skill="1.0" data-energy="1.0">ようき（EXPUP・食材DOWN）</option>
+            <option value="むじゃき" data-speed="0.0" data-skill="0.8" data-energy="1.0">むじゃき（EXPUP・スキルDOWN）</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>サブスキル(確率):</label>
+          <div class="chk-group">
+            <label><input type="checkbox" id="sub-prob-m" checked onchange="updateCalculations();saveConfig();">確率M</label>
+            <label><input type="checkbox" id="sub-prob-s" checked onchange="updateCalculations();saveConfig();">確率S</label>
+          </div>
+        </div>
+        <div class="row">
+          <label>サブスキル(スピード):</label>
+          <div class="chk-group">
+            <label><input type="checkbox" id="sub-speed-m" checked onchange="updateCalculations();saveConfig();">スピM</label>
+            <label><input type="checkbox" id="sub-speed-s" onchange="updateCalculations();saveConfig();">スピS</label>
+          </div>
+        </div>
+        <div class="row">
+          <label>チームおてボ:</label>
+          <select id="team-otomo" onchange="updateCalculations();saveConfig();">
+            <option value="0" selected>なし</option><option value="1">1枚(5%)</option>
+            <option value="2">2枚(10%)</option><option value="3">3枚(15%)</option>
+            <option value="4">4枚(20%)</option><option value="5">5枚(25%)</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>スキルLv(回復用):</label>
+          <select id="skill-lv" onchange="updateCalculations();saveConfig();">
+            <option value="1">Lv1(5)</option><option value="2">Lv2(7)</option>
+            <option value="3">Lv3(9)</option><option value="4">Lv4(11)</option>
+            <option value="5">Lv5(15)</option><option value="6" selected>Lv6(18)</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>フィールド:</label>
+          <label><input type="checkbox" id="camp-ticket" onchange="updateCalculations();saveConfig();">いいキャンプチケ</label>
+        </div>
+        <div class="row">
+          <label>EX好物:</label>
+          <div class="chk-group">
+            <label><input type="checkbox" id="ex-fav-minus" onchange="toggleExFav('minus')">－10％</label>
+            <label><input type="checkbox" id="ex-fav-plus" onchange="toggleExFav('plus')">＋10％</label>
+          </div>
+        </div>
+        <div class="row">
+          <label>EXバフ:</label>
+          <label><input type="checkbox" id="event-skill-buff" onchange="updateCalculations();saveConfig();">スキル発生 1.25倍</label>
+        </div>
+        <div class="row">
+          <label>ストック補正:</label>
+          <label><input type="checkbox" id="stock-correction" checked onchange="saveConfig();updateSessionDashboard();">放置時のロスを差し引く</label>
+        </div>
+        <div class="hint">※ 元気81%以上を維持する前提で、実速度は表示×2.22倍で計算しています。<br>※ 2時間以上タップ間隔が空いたら、2回ストック超過による理論ロスをポアソン計算で差し引きます。</div>
       </div>
-    </div>
-    <div class="row">
-      <label>サブスキル(スピード):</label>
-      <div class="chk-group">
-        <label><input type="checkbox" id="sub-speed-m" checked onchange="updateCalculations();saveConfig();">スピM</label>
-        <label><input type="checkbox" id="sub-speed-s" onchange="updateCalculations();saveConfig();">スピS</label>
-      </div>
-    </div>
-    <div class="row">
-      <label>チームおてボ:</label>
-      <select id="team-otomo" onchange="updateCalculations();saveConfig();">
-        <option value="0" selected>なし</option><option value="1">1枚(5%)</option>
-        <option value="2">2枚(10%)</option><option value="3">3枚(15%)</option>
-        <option value="4">4枚(20%)</option><option value="5">5枚(25%)</option>
-      </select>
-    </div>
-    <div class="row">
-      <label>スキルLv(回復用):</label>
-      <select id="skill-lv" onchange="updateCalculations();saveConfig();">
-        <option value="1">Lv1(5)</option><option value="2">Lv2(7)</option>
-        <option value="3">Lv3(9)</option><option value="4">Lv4(11)</option>
-        <option value="5">Lv5(15)</option><option value="6" selected>Lv6(18)</option>
-      </select>
-    </div>
-    <div class="row">
-      <label>フィールド:</label>
-      <label><input type="checkbox" id="camp-ticket" onchange="updateCalculations();saveConfig();">いいキャンプチケ</label>
-    </div>
-    <div class="row">
-      <label>EX好物:</label>
-      <div class="chk-group">
-        <label><input type="checkbox" id="ex-fav-minus" onchange="toggleExFav('minus')">－10％</label>
-        <label><input type="checkbox" id="ex-fav-plus" onchange="toggleExFav('plus')">＋10％</label>
-      </div>
-    </div>
-    <div class="row">
-      <label>EXバフ:</label>
-      <label><input type="checkbox" id="event-skill-buff" onchange="updateCalculations();saveConfig();">スキル発生 1.25倍</label>
-    </div>
-    <div class="row">
-      <label>ストック補正:</label>
-      <label><input type="checkbox" id="stock-correction" checked onchange="saveConfig();updateSessionDashboard();">放置時のロスを差し引く</label>
-    </div>
-    <div class="hint">※ 元気81%以上を維持する前提で、実速度は表示×2.22倍で計算しています。<br>※ 2時間以上タップ間隔が空いたら、2回ストック超過による理論ロスをポアソン計算で差し引きます。</div>
+    </details>
 
     <div class="status-line">
       <div class="kv">
