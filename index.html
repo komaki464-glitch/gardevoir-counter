@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ポケスリ スキル＆げんきカウンター V11</title>
+<title>ポケスリ スキル＆げんきカウンター V11</title> 
+manifest.json
+apple-touch-icon.png
+<meta name="theme-color" content="#68d391">
 <style>
   :root{--primary:#68d391;--bg:#f7fafc;--card:#fff;--txt:#2d3748;--accent:#2b6cb0;}
   *{box-sizing:border-box;}
@@ -942,6 +945,11 @@ function renderAll(){
   renderWeekly();
   renderConfigLog();
   updateSessionDashboard();
+}
+  if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js');
+  });
 }
 </script>
 </body>
