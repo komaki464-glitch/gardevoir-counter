@@ -1,503 +1,706 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>サーナイト スキル＆げんきカウンター V7</title>
-    <style>
-        :root {
-            --primary-color: #68d391;
-            --bg-color: #f7fafc;
-            --card-bg: #ffffff;
-            --text-color: #2d3748;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .container {
-            width: 100%;
-            max-width: 480px;
-            background: var(--card-bg);
-            border-radius: 16px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            padding: 16px;
-            box-sizing: border-box;
-        }
-        h1 {
-            font-size: 1.2rem;
-            text-align: center;
-            margin-top: 0;
-            margin-bottom: 16px;
-            color: #4a5568;
-        }
-        .section-title {
-            font-size: 0.95rem;
-            font-weight: bold;
-            color: #4a5568;
-            margin-bottom: 8px;
-            border-left: 4px solid var(--primary-color);
-            padding-left: 6px;
-        }
-        .config-section {
-            background: #edf2f7;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            font-size: 0.85rem;
-        }
-        .config-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        .config-row:last-child { margin-bottom: 0; }
-        select, input[type="number"] {
-            padding: 4px;
-            border: 1px solid #cbd5e0;
-            border-radius: 4px;
-            background: white;
-            font-size: 0.85rem;
-            max-width: 250px;
-        }
-        .checkbox-group {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .dashboard {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .stat-box {
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-            font-size: 0.8rem;
-        }
-        .stat-box.highlight {
-            grid-column: span 2;
-            background: #ebf8ff;
-            border-color: #bee3f8;
-        }
-        .stat-box.energy-box {
-            grid-column: span 2;
-            background: #fffaf0;
-            border-color: #feebc8;
-        }
-        .stat-val {
-            font-size: 1.3rem;
-            font-weight: bold;
-            margin-top: 4px;
-        }
-        .stat-val.plus { color: #38a169; }
-        .stat-val.minus { color: #e53e3e; }
-        .stat-val.energy { color: #dd6b20; }
-
-        .trigger-btn {
-            width: 100%;
-            height: 70px;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 14px rgba(104, 211, 145, 0.4);
-            transition: transform 0.1s;
-            margin-bottom: 12px;
-        }
-        .trigger-btn:active { transform: scale(0.98); }
-
-        .control-btns {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .control-btns button {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid #cbd5e0;
-            background: white;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            cursor: pointer;
-        }
-        .log-section {
-            border-top: 1px solid #e2e8f0;
-            padding-top: 12px;
-        }
-        .log-list {
-            max-height: 150px;
-            overflow-y: auto;
-            font-size: 0.8rem;
-            color: #4a5568;
-            padding-left: 20px;
-            margin: 0;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ポケスリ スキル＆げんきカウンター V8</title>
+<style>
+  :root{--primary:#68d391;--bg:#f7fafc;--card:#fff;--txt:#2d3748;--accent:#2b6cb0;}
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--txt);margin:0;padding:12px;display:flex;flex-direction:column;align-items:center;}
+  .container{width:100%;max-width:480px;background:var(--card);border-radius:16px;box-shadow:0 4px 6px rgba(0,0,0,.05);padding:16px;margin-bottom:12px;}
+  h1{font-size:1.2rem;text-align:center;margin:0 0 16px;color:#4a5568;}
+  .section-title{font-size:.95rem;font-weight:bold;color:#4a5568;margin:12px 0 8px;border-left:4px solid var(--primary);padding-left:6px;}
+  .box{background:#edf2f7;padding:12px;border-radius:8px;margin-bottom:12px;font-size:.85rem;}
+  .row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;}
+  .row:last-child{margin-bottom:0;}
+  select,input[type="number"],input[type="time"],input[type="date"]{padding:4px;border:1px solid #cbd5e0;border-radius:4px;background:#fff;font-size:.85rem;max-width:260px;}
+  .chk-group{display:flex;gap:12px;flex-wrap:wrap;}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+  .stat{background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center;font-size:.78rem;}
+  .stat.full{grid-column:span 2;}
+  .stat.hl{background:#ebf8ff;border-color:#bee3f8;}
+  .stat.energy{background:#fffaf0;border-color:#feebc8;}
+  .stat-val{font-size:1.25rem;font-weight:bold;margin-top:4px;}
+  .stat-val.plus{color:#38a169;}
+  .stat-val.minus{color:#e53e3e;}
+  .stat-val.energy{color:#dd6b20;}
+  .btn-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;}
+  .btn{border:none;border-radius:10px;padding:14px 4px;font-size:.9rem;font-weight:bold;cursor:pointer;color:#fff;box-shadow:0 3px 8px rgba(0,0,0,.12);}
+  .btn:active{transform:scale(.97);}
+  .btn.miss{background:#a0aec0;}
+  .btn.one{background:var(--primary);}
+  .btn.two{background:#4299e1;}
+  .btn .count{font-size:.7rem;font-weight:normal;display:block;margin-top:4px;opacity:.9;}
+  .util-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+  .util-btns button{padding:8px;border:1px solid #cbd5e0;background:#fff;border-radius:6px;font-size:.78rem;cursor:pointer;}
+  .util-btns button.danger{color:#c53030;border-color:#feb2b2;}
+  .util-btns button.primary{background:#4299e1;color:#fff;border-color:#4299e1;}
+  .log-list{max-height:170px;overflow-y:auto;font-size:.78rem;color:#4a5568;padding-left:20px;margin:0;}
+  .weekly-block{background:#f7fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px;margin-bottom:8px;font-size:.78rem;}
+  .weekly-block h4{margin:0 0 4px;font-size:.85rem;color:#2b6cb0;}
+  textarea{width:100%;height:110px;font-family:monospace;font-size:.75rem;padding:6px;border:1px solid #cbd5e0;border-radius:6px;}
+  .status-line{border-top:1px dashed #cbd5e0;padding-top:8px;margin-top:8px;font-size:.85rem;}
+  .status-line .kv{display:flex;gap:16px;white-space:nowrap;overflow-x:auto;}
+  .badge{display:inline-block;background:var(--accent);color:#fff;padding:1px 6px;border-radius:10px;font-size:.7rem;margin-left:4px;}
+  details summary{cursor:pointer;font-weight:bold;font-size:.9rem;color:#4a5568;margin-bottom:6px;}
+</style>
 </head>
 <body>
 
 <div class="container">
-    <h1>サーナイト カウンター V7</h1>
+  <h1>ポケスリ カウンター V8 <span id="pkm-badge" class="badge">サーナイト</span></h1>
 
-    <!-- 個体・環境設定 -->
-    <div class="section-title">個体・環境設定</div>
-    <div class="config-section">
-        <div class="config-row">
-            <label>現在のレベル:</label>
-            <input type="number" id="pokemon-lvl" value="70" min="1" max="100" style="width: 60px;" onchange="updateCalculations()">
-        </div>
-        <div class="config-row">
-            <label>性格:</label>
-            <select id="nature" onchange="updateCalculations()">
-                <option value="がんばりや" data-speed="0.0" data-skill="1.0" data-energy="1.0">がんばりや（無補正）</option>
-                <option value="すなお" data-speed="0.0" data-skill="1.0" data-energy="1.0">すなお（無補正）</option>
-                <option value="てれや" data-speed="0.0" data-skill="1.0" data-energy="1.0">てれや（無補正）</option>
-                <option value="きまぐれ" data-speed="0.0" data-skill="1.0" data-energy="1.0">きまぐれ（無補正）</option>
-                <option value="まじめ" data-speed="0.0" data-skill="1.0" data-energy="1.0">まじめ（無補正）</option>
-                <option value="さみしがり" data-speed="-0.1" data-skill="1.0" data-energy="0.8" selected>さみしがり（おてつだいスピードUP・げんき回復量DOWN）</option>
-                <option value="いじっぱり" data-speed="-0.1" data-skill="1.0" data-energy="1.0">いじっぱり（おてつだいスピードUP・食材おてつだい確率DOWN）</option>
-                <option value="やんちゃ" data-speed="-0.1" data-skill="0.8" data-energy="1.0">やんちゃ（おてつだいスピードUP・メインスキル発生確率DOWN）</option>
-                <option value="ゆうかん" data-speed="-0.1" data-skill="1.0" data-energy="1.0">ゆうかん（おてつだいスピードUP・EXP獲得量DOWN）</option>
-                <option value="ずぶとい" data-speed="0.1" data-skill="1.0" data-energy="1.2">ずぶとい（げんき回復量UP・おてつだいスピードDOWN）</option>
-                <option value="わんぱく" data-speed="0.0" data-skill="1.0" data-energy="1.2">わんぱく（げんき回復量UP・食材おてつだい確率DOWN）</option>
-                <option value="のうてんき" data-speed="0.0" data-skill="0.8" data-energy="1.2">のうてんき（げんき回復量UP・メインスキル発生確率DOWN）</option>
-                <option value="のんき" data-speed="0.0" data-skill="1.0" data-energy="1.2">のんき（げんき回復量UP・EXP獲得量DOWN）</option>
-                <option value="ひかえめ" data-speed="0.1" data-skill="1.0" data-energy="1.0">ひかえめ（食材おてつだい確率UP・おてつだいスピードDOWN）</option>
-                <option value="おっとり" data-speed="0.0" data-skill="1.0" data-energy="0.8">おっとり（食材おてつだい確率UP・げんき回復量DOWN）</option>
-                <option value="うっかりや" data-speed="0.0" data-skill="0.8" data-energy="1.0">うっかりや（食材おてつだい確率UP・メインスキル発生確率DOWN）</option>
-                <option value="れいせい" data-speed="0.0" data-skill="1.0" data-energy="1.0">れいせい（食材おてつだい確率UP・EXP獲得量DOWN）</option>
-                <option value="おだやか" data-speed="0.1" data-skill="1.2" data-energy="1.0">おだやか（メインスキル発生確率UP・おてつだいスピードDOWN）</option>
-                <option value="おとなしい" data-speed="0.0" data-skill="1.2" data-energy="0.8">おとなしい（メインスキル発生確率UP・げんき回復量DOWN）</option>
-                <option value="しんちょう" data-speed="0.0" data-skill="1.2" data-energy="1.0">しんちょう（メインスキル発生確率UP・食材おてつだい確率DOWN）</option>
-                <option value="なまいき" data-speed="0.0" data-skill="1.2" data-energy="1.0">なまいき（メインスキル発生確率UP・EXP獲得量DOWN）</option>
-                <option value="おくびょう" data-speed="0.1" data-skill="1.0" data-energy="1.0">おくびょう（EXP獲得量UP・おてつだいスピードDOWN）</option>
-                <option value="せっかち" data-speed="0.0" data-skill="1.0" data-energy="0.8">せっかち（EXP獲得量UP・げんき回復量DOWN）</option>
-                <option value="ようき" data-speed="0.0" data-skill="1.0" data-energy="1.0">ようき（EXP獲得量UP・食材おてつだい確率DOWN）</option>
-                <option value="むじゃき" data-speed="0.0" data-skill="0.8" data-energy="1.0">むじゃき（EXP獲得量UP・メインスキル発生確率DOWN）</option>
-            </select>
-        </div>
-        <div class="config-row">
-            <label>サブスキル(確率):</label>
-            <div class="checkbox-group">
-                <label><input type="checkbox" id="sub-prob-m" checked onchange="updateCalculations()">確率M</label>
-                <label><input type="checkbox" id="sub-prob-s" checked onchange="updateCalculations()">確率S</label>
-            </div>
-        </div>
-        <div class="config-row">
-            <label>サブスキル(スピード):</label>
-            <div class="checkbox-group">
-                <label><input type="checkbox" id="sub-speed-m" checked onchange="updateCalculations()">スピM</label>
-                <label><input type="checkbox" id="sub-speed-s" onchange="updateCalculations()">スピS</label>
-            </div>
-        </div>
-        <div class="config-row">
-            <label>チームのおてつだいボーナス:</label>
-            <select id="team-otomo" onchange="updateCalculations()">
-                <option value="0" selected>なし (0枚)</option>
-                <option value="1">1枚 (5%)</option>
-                <option value="2">2枚 (10%)</option>
-                <option value="3">3枚 (15%)</option>
-                <option value="4">4枚 (20%)</option>
-                <option value="5">5枚 (25%)</option>
-            </select>
-        </div>
-        <div class="config-row">
-            <label>スキルレベル (回復量用):</label>
-            <select id="skill-lv" onchange="updateCalculations()">
-                <option value="1">Lv1 (5)</option>
-                <option value="2">Lv2 (7)</option>
-                <option value="3">Lv3 (9)</option>
-                <option value="4">Lv4 (11)</option>
-                <option value="5">Lv5 (15)</option>
-                <option value="6" selected>Lv6 (18)</option>
-            </select>
-        </div>
-        <div class="config-row">
-            <label>フィールド環境:</label>
-            <div class="checkbox-group">
-                <label><input type="checkbox" id="camp-ticket" onchange="updateCalculations()">いいキャンプチケ</label>
-            </div>
-        </div>
-        <div class="config-row">
-            <label>EX好物:</label>
-            <div class="checkbox-group">
-                <label><input type="checkbox" id="ex-fav-minus" onchange="toggleExFav('minus')">－10％</label>
-                <label><input type="checkbox" id="ex-fav-plus" onchange="toggleExFav('plus')">＋10％</label>
-            </div>
-        </div>
-        <div class="config-row">
-            <label>EXバフ:</label>
-            <div class="checkbox-group">
-                <label><input type="checkbox" id="event-skill-buff" onchange="updateCalculations()">メインスキル発生確率 1.25倍</label>
-            </div>
-        </div>
+  <!-- ▼ ポケモン切替 -->
+  <div class="section-title">ポケモン選択</div>
+  <div class="box">
+    <div class="row">
+      <label>ポケモン:</label>
+      <select id="pokemon" onchange="onPokemonChange()">
+        <option value="gardevoir" selected>サーナイト</option>
+        <option value="pawmot">パーモット</option>
+        <option value="sylveon">ニンフィア</option>
+        <option value="wigglytuff">プクリン</option>
+        <option value="shuckle">ツボツボ</option>
+      </select>
+    </div>
+    <div class="row" style="font-size:.75rem;color:#718096;">
+      <span>お手伝い時間 <span id="pk-base-period">--</span>秒 / 基本確率 <span id="pk-base-prob">--</span>% / 天井 <span id="pk-ceiling">--</span>回</span>
+    </div>
+  </div>
 
-        <!-- ▼ 連動ステータス表示（1行目：お手伝い時間+スキル確率／2行目：期待値） -->
-        <div style="border-top: 1px dashed #cbd5e0; padding-top: 8px; margin-top: 8px;">
-            <div style="display: flex; gap: 16px; white-space: nowrap; overflow-x: auto; font-size: 0.85rem;">
-                <span>お手伝い時間: <span id="calculated-period" style="font-weight: bold; color: #2b6cb0;">--分--秒</span></span>
-                <span>スキル確率: <span id="calculated-prob" style="font-weight: bold; color: #2b6cb0;">--%</span></span>
-            </div>
-            <div style="margin-top: 6px; white-space: nowrap; font-size: 0.85rem;">
-                1時間あたりのスキル期待値: <span id="hourly-exp" style="font-weight: bold;">0.00000</span>
-            </div>
-        </div>
+  <!-- ▼ 個体・環境設定 -->
+  <div class="section-title">個体・環境設定</div>
+  <div class="box">
+    <div class="row">
+      <label>現在のレベル:</label>
+      <input type="number" id="pokemon-lvl" value="70" min="1" max="100" style="width:60px;" onchange="updateCalculations();saveConfig();">
+    </div>
+    <div class="row">
+      <label>性格:</label>
+      <select id="nature" onchange="updateCalculations();saveConfig();">
+        <option value="がんばりや" data-speed="0.0" data-skill="1.0" data-energy="1.0">がんばりや（無補正）</option>
+        <option value="すなお" data-speed="0.0" data-skill="1.0" data-energy="1.0">すなお（無補正）</option>
+        <option value="てれや" data-speed="0.0" data-skill="1.0" data-energy="1.0">てれや（無補正）</option>
+        <option value="きまぐれ" data-speed="0.0" data-skill="1.0" data-energy="1.0">きまぐれ（無補正）</option>
+        <option value="まじめ" data-speed="0.0" data-skill="1.0" data-energy="1.0">まじめ（無補正）</option>
+        <option value="さみしがり" data-speed="-0.1" data-skill="1.0" data-energy="0.8" selected>さみしがり（スピUP・げんきDOWN）</option>
+        <option value="いじっぱり" data-speed="-0.1" data-skill="1.0" data-energy="1.0">いじっぱり（スピUP・食材DOWN）</option>
+        <option value="やんちゃ" data-speed="-0.1" data-skill="0.8" data-energy="1.0">やんちゃ（スピUP・スキルDOWN）</option>
+        <option value="ゆうかん" data-speed="-0.1" data-skill="1.0" data-energy="1.0">ゆうかん（スピUP・EXPDOWN）</option>
+        <option value="ずぶとい" data-speed="0.1" data-skill="1.0" data-energy="1.2">ずぶとい（げんきUP・スピDOWN）</option>
+        <option value="わんぱく" data-speed="0.0" data-skill="1.0" data-energy="1.2">わんぱく（げんきUP・食材DOWN）</option>
+        <option value="のうてんき" data-speed="0.0" data-skill="0.8" data-energy="1.2">のうてんき（げんきUP・スキルDOWN）</option>
+        <option value="のんき" data-speed="0.0" data-skill="1.0" data-energy="1.2">のんき（げんきUP・EXPDOWN）</option>
+        <option value="ひかえめ" data-speed="0.1" data-skill="1.0" data-energy="1.0">ひかえめ（食材UP・スピDOWN）</option>
+        <option value="おっとり" data-speed="0.0" data-skill="1.0" data-energy="0.8">おっとり（食材UP・げんきDOWN）</option>
+        <option value="うっかりや" data-speed="0.0" data-skill="0.8" data-energy="1.0">うっかりや（食材UP・スキルDOWN）</option>
+        <option value="れいせい" data-speed="0.0" data-skill="1.0" data-energy="1.0">れいせい（食材UP・EXPDOWN）</option>
+        <option value="おだやか" data-speed="0.1" data-skill="1.2" data-energy="1.0">おだやか（スキルUP・スピDOWN）</option>
+        <option value="おとなしい" data-speed="0.0" data-skill="1.2" data-energy="0.8">おとなしい（スキルUP・げんきDOWN）</option>
+        <option value="しんちょう" data-speed="0.0" data-skill="1.2" data-energy="1.0">しんちょう（スキルUP・食材DOWN）</option>
+        <option value="なまいき" data-speed="0.0" data-skill="1.2" data-energy="1.0">なまいき（スキルUP・EXPDOWN）</option>
+        <option value="おくびょう" data-speed="0.1" data-skill="1.0" data-energy="1.0">おくびょう（EXPUP・スピDOWN）</option>
+        <option value="せっかち" data-speed="0.0" data-skill="1.0" data-energy="0.8">せっかち（EXPUP・げんきDOWN）</option>
+        <option value="ようき" data-speed="0.0" data-skill="1.0" data-energy="1.0">ようき（EXPUP・食材DOWN）</option>
+        <option value="むじゃき" data-speed="0.0" data-skill="0.8" data-energy="1.0">むじゃき（EXPUP・スキルDOWN）</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>サブスキル(確率):</label>
+      <div class="chk-group">
+        <label><input type="checkbox" id="sub-prob-m" checked onchange="updateCalculations();saveConfig();">確率M</label>
+        <label><input type="checkbox" id="sub-prob-s" checked onchange="updateCalculations();saveConfig();">確率S</label>
+      </div>
+    </div>
+    <div class="row">
+      <label>サブスキル(スピード):</label>
+      <div class="chk-group">
+        <label><input type="checkbox" id="sub-speed-m" checked onchange="updateCalculations();saveConfig();">スピM</label>
+        <label><input type="checkbox" id="sub-speed-s" onchange="updateCalculations();saveConfig();">スピS</label>
+      </div>
+    </div>
+    <div class="row">
+      <label>チームおてボ:</label>
+      <select id="team-otomo" onchange="updateCalculations();saveConfig();">
+        <option value="0" selected>なし</option><option value="1">1枚(5%)</option>
+        <option value="2">2枚(10%)</option><option value="3">3枚(15%)</option>
+        <option value="4">4枚(20%)</option><option value="5">5枚(25%)</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>スキルLv(回復用):</label>
+      <select id="skill-lv" onchange="updateCalculations();saveConfig();">
+        <option value="1">Lv1(5)</option><option value="2">Lv2(7)</option>
+        <option value="3">Lv3(9)</option><option value="4">Lv4(11)</option>
+        <option value="5">Lv5(15)</option><option value="6" selected>Lv6(18)</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>フィールド:</label>
+      <label><input type="checkbox" id="camp-ticket" onchange="updateCalculations();saveConfig();">いいキャンプチケ</label>
+    </div>
+    <div class="row">
+      <label>EX好物:</label>
+      <div class="chk-group">
+        <label><input type="checkbox" id="ex-fav-minus" onchange="toggleExFav('minus')">－10％</label>
+        <label><input type="checkbox" id="ex-fav-plus" onchange="toggleExFav('plus')">＋10％</label>
+      </div>
+    </div>
+    <div class="row">
+      <label>EXバフ:</label>
+      <label><input type="checkbox" id="event-skill-buff" onchange="updateCalculations();saveConfig();">スキル発生 1.25倍</label>
     </div>
 
-    <!-- げんき度管理 -->
-    <div class="section-title">げんき度リアルタイムシミュレート</div>
-    <div class="dashboard" style="grid-template-columns: 1fr 1fr; margin-bottom: 8px;">
-        <div class="stat-box energy-box" style="grid-column: span 1;">
-            <div>現在のげんき度</div>
-            <div class="stat-val energy" id="current-energy">---</div>
-        </div>
-        <div class="stat-box energy-box" style="grid-column: span 1;">
-            <div>80%を切る予測時刻</div>
-            <div class="stat-val" id="predict-time" style="font-size: 1.1rem; margin-top: 8px;">---</div>
-        </div>
+    <div class="status-line">
+      <div class="kv">
+        <span>お手伝い時間: <b id="calculated-period" style="color:var(--accent);">--分--秒</b></span>
+        <span>スキル確率: <b id="calculated-prob" style="color:var(--accent);">--%</b></span>
+      </div>
+      <div style="margin-top:6px;">天井考慮スキル確率: <b id="ceiling-prob" style="color:#805ad5;">--%</b></div>
+      <div>1時間あたり期待値: <b id="hourly-exp">0.00000</b></div>
     </div>
-    <div class="config-row" style="margin-bottom: 16px; font-size: 0.85rem;">
-        <label>現在のげんき度を手動修正:</label>
-        <div style="display: flex; gap: 4px;">
-            <input type="number" id="manual-energy" value="100" style="width: 50px;">
-            <button onclick="setManualEnergy()" style="font-size: 0.75rem; padding: 2px 6px;">適用</button>
-        </div>
+  </div>
+
+  <!-- ▼ 計測セッション -->
+  <div class="section-title">計測セッション</div>
+  <div class="box">
+    <div class="row">
+      <span>状態: <b id="session-state">未開始</b></span>
+      <span>開始: <b id="session-start">--:--</b></span>
+    </div>
+    <div class="stat-grid" style="margin-top:8px;">
+      <div class="stat"><div>経過時間</div><div class="stat-val" id="elapsed-time">0.0h</div></div>
+      <div class="stat"><div>期待値(天井込)</div><div class="stat-val" id="expected-count">0.00</div></div>
+      <div class="stat full hl"><div>期待値との差分</div><div class="stat-val" id="diff-count">±0.00</div></div>
+      <div class="stat"><div>不発</div><div class="stat-val" id="miss-count" style="color:#718096;">0</div></div>
+      <div class="stat"><div>1回発動</div><div class="stat-val" id="one-count" style="color:#38a169;">0</div></div>
+      <div class="stat full"><div>2回発動</div><div class="stat-val" id="two-count" style="color:#4299e1;">0</div></div>
     </div>
 
-    <!-- スキル統計ダッシュボード -->
-    <div class="section-title">スキル発動統計</div>
-    <div class="dashboard">
-        <div class="stat-box">
-            <div>経過時間</div>
-            <div class="stat-val" id="elapsed-time">0.0h</div>
-        </div>
-        <div class="stat-box">
-            <div>現在の期待値</div>
-            <div class="stat-val" id="expected-count">0.00</div>
-        </div>
-        <div class="stat-box highlight">
-            <div>期待値との差分</div>
-            <div class="stat-val" id="diff-count">±0.00</div>
-        </div>
+    <div class="btn-row">
+      <button class="btn miss" onclick="recordEvent('miss')">不発<span class="count" id="btn-miss">0</span></button>
+      <button class="btn one" onclick="recordEvent('one')">1回発動<span class="count" id="btn-one">0</span></button>
+      <button class="btn two" onclick="recordEvent('two')">2回発動<span class="count" id="btn-two">0</span></button>
     </div>
 
-    <!-- メインボタン -->
-    <button class="trigger-btn" onclick="recordSkill()">スキル発動！ (<span id="actual-count">0</span>)</button>
-
-    <div class="control-btns">
-        <button onclick="startTracking()">計測開始 / 全リセット</button>
+    <div class="util-btns">
+      <button onclick="startSession()">▶ 計測開始</button>
+      <button class="primary" onclick="endDay()">■ 一日の計測終了</button>
     </div>
-
-    <!-- 履歴ログ -->
-    <div class="log-section">
-        <div class="section-title">本日のログ</div>
-        <ul class="log-list" id="log-list"></ul>
+    <div class="util-btns">
+      <button onclick="undoLast()">← 直前の1件を取消</button>
+      <button class="danger" onclick="resetSession()">セッション破棄</button>
     </div>
+  </div>
+
+  <!-- ▼ げんき度 -->
+  <div class="section-title">げんき度シミュレート</div>
+  <div class="box">
+    <div class="stat-grid">
+      <div class="stat energy"><div>現在のげんき</div><div class="stat-val energy" id="cur-energy">---</div></div>
+      <div class="stat energy"><div>80%を切る予測</div><div class="stat-val" id="predict80" style="font-size:1rem;margin-top:8px;">---</div></div>
+    </div>
+    <div class="row">
+      <label>げんき手動修正:</label>
+      <div style="display:flex;gap:4px;">
+        <input type="number" id="manual-energy" value="100" style="width:60px;">
+        <button onclick="setManualEnergy()" style="font-size:.75rem;padding:2px 8px;">適用</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ▼ 手動入力 -->
+  <div class="section-title">手動入力（記録忘れ用）</div>
+  <div class="box">
+    <div class="row">
+      <label>開始時刻を過去に:</label>
+      <div style="display:flex;gap:4px;">
+        <input type="time" id="manual-start-time">
+        <button onclick="manualStart()" style="font-size:.75rem;">開始</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>イベント追加:</label>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;">
+        <input type="time" id="manual-evt-time">
+        <select id="manual-evt-type">
+          <option value="miss">不発</option>
+          <option value="one" selected>1回</option>
+          <option value="two">2回</option>
+        </select>
+        <button onclick="manualAddEvent()" style="font-size:.75rem;">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ▼ 今日のログ -->
+  <div class="section-title">本日のイベントログ</div>
+  <ul class="log-list" id="log-list"></ul>
+</div>
+
+<!-- ▼ 週次ログ -->
+<div class="container">
+  <div class="section-title">週次ログ（過去の記録）</div>
+  <div id="weekly-container"></div>
+
+  <details style="margin-top:12px;">
+    <summary>データ管理（バックアップ / 復元）</summary>
+    <div style="margin-top:8px;">
+      <div class="util-btns">
+        <button class="primary" onclick="exportData()">📤 テキスト書き出し</button>
+        <button onclick="document.getElementById('import-area').focus()">📥 読み込み欄へ</button>
+      </div>
+      <p style="font-size:.75rem;color:#718096;margin:6px 0;">下のテキストをコピーして保管、または貼り付けて復元してください。</p>
+      <textarea id="import-area" placeholder="ここにバックアップテキストを貼り付け"></textarea>
+      <div class="util-btns" style="margin-top:6px;">
+        <button onclick="importData()">💾 このテキストで復元</button>
+        <button class="danger" onclick="clearAllData()">🗑 全データ削除</button>
+      </div>
+    </div>
+  </details>
 </div>
 
 <script>
-    let startTime = null;
-    let actualCount = 0;
-    let logs = [];
-    let lastEnergyUpdateIdxTime = null;
-    let baseEnergyVal = 100;
-    let timerInterval = null;
+/* =========================================================
+   ポケモンプリセット（RaenonX / おがのブログ準拠 2026-07時点）
+   ※ ツボツボ天井は暫定値。正確な値が判明したら書き換え可
+========================================================= */
+const POKEMON = {
+  gardevoir :{name:'サーナイト',basePeriod:2400,baseProb:0.042,ceiling:60},
+  pawmot    :{name:'パーモット',basePeriod:2400,baseProb:0.039,ceiling:60},
+  sylveon   :{name:'ニンフィア',basePeriod:2600,baseProb:0.040,ceiling:55},
+  wigglytuff:{name:'プクリン',  basePeriod:2750,baseProb:0.040,ceiling:49},
+  shuckle   :{name:'ツボツボ',  basePeriod:3600,baseProb:0.059,ceiling:78},
+};
+const HEAL_TABLE = {1:5,2:7,3:9,4:11,5:15,6:18};
 
-    const BASE_PERIOD = 2400;
-    const BASE_PROB = 0.042;
-    const HEAL_TABLE = { 1: 5, 2: 7, 3: 9, 4: 11, 5: 15, 6: 18 };
+/* =========================================================
+   ストレージキー
+========================================================= */
+const K_CFG='skv8:config', K_SESS='skv8:session', K_LOGS='skv8:dailyLogs', K_ENERGY='skv8:energy';
 
-    function toggleExFav(type) {
-        if (type === 'minus' && document.getElementById('ex-fav-minus').checked) {
-            document.getElementById('ex-fav-plus').checked = false;
-        } else if (type === 'plus' && document.getElementById('ex-fav-plus').checked) {
-            document.getElementById('ex-fav-minus').checked = false;
-        }
-        updateCalculations();
-    }
+/* =========================================================
+   状態
+========================================================= */
+let session = null;
+let dailyLogs = [];
+let energyState = {baseVal:100, lastUpdate:null};
+let timerInterval = null;
 
-    function updateCalculations() {
-        const lvl = parseInt(document.getElementById('pokemon-lvl').value) || 1;
-        const lvlBonus = 1 - (lvl - 1) * 0.002;
+/* =========================================================
+   初期化
+========================================================= */
+window.addEventListener('load', ()=>{
+  loadAll();
+  updateCalculations();
+  renderAll();
+  startTimerLoop();
+});
 
-        const natureSelect = document.getElementById('nature');
-        const selectedNature = natureSelect.options[natureSelect.selectedIndex];
+/* =========================================================
+   ストレージ
+========================================================= */
+function saveConfig(){
+  const cfg = {
+    pokemon:val('pokemon'),
+    level:val('pokemon-lvl'),
+    nature:val('nature'),
+    probM:chk('sub-prob-m'), probS:chk('sub-prob-s'),
+    speedM:chk('sub-speed-m'), speedS:chk('sub-speed-s'),
+    otomo:val('team-otomo'),
+    skillLv:val('skill-lv'),
+    camp:chk('camp-ticket'),
+    exMinus:chk('ex-fav-minus'), exPlus:chk('ex-fav-plus'),
+    exBuff:chk('event-skill-buff'),
+  };
+  localStorage.setItem(K_CFG, JSON.stringify(cfg));
+}
+function loadConfig(){
+  const raw = localStorage.getItem(K_CFG); if(!raw) return;
+  try{
+    const c = JSON.parse(raw);
+    setVal('pokemon',c.pokemon); setVal('pokemon-lvl',c.level);
+    setVal('nature',c.nature);
+    setChk('sub-prob-m',c.probM); setChk('sub-prob-s',c.probS);
+    setChk('sub-speed-m',c.speedM); setChk('sub-speed-s',c.speedS);
+    setVal('team-otomo',c.otomo); setVal('skill-lv',c.skillLv);
+    setChk('camp-ticket',c.camp);
+    setChk('ex-fav-minus',c.exMinus); setChk('ex-fav-plus',c.exPlus);
+    setChk('event-skill-buff',c.exBuff);
+  }catch(e){}
+}
+function saveSession(){ if(session) localStorage.setItem(K_SESS, JSON.stringify(session)); else localStorage.removeItem(K_SESS); }
+function loadSession(){ const raw=localStorage.getItem(K_SESS); if(raw){ try{session=JSON.parse(raw);}catch(e){session=null;} } }
+function saveLogs(){ localStorage.setItem(K_LOGS, JSON.stringify(dailyLogs)); }
+function loadLogs(){ const raw=localStorage.getItem(K_LOGS); if(raw){ try{dailyLogs=JSON.parse(raw);}catch(e){dailyLogs=[];} } }
+function saveEnergy(){ localStorage.setItem(K_ENERGY, JSON.stringify(energyState)); }
+function loadEnergy(){ const raw=localStorage.getItem(K_ENERGY); if(raw){ try{energyState=JSON.parse(raw);}catch(e){} } }
+function loadAll(){ loadConfig(); loadSession(); loadLogs(); loadEnergy(); onPokemonChange(true); }
 
-        const natureSpeedBonus = parseFloat(selectedNature.getAttribute('data-speed'));
-        const natureSkillBonus = parseFloat(selectedNature.getAttribute('data-skill'));
+/* =========================================================
+   ヘルパ
+========================================================= */
+function val(id){return document.getElementById(id).value;}
+function setVal(id,v){if(v!==undefined&&v!==null){document.getElementById(id).value=v;}}
+function chk(id){return document.getElementById(id).checked;}
+function setChk(id,v){document.getElementById(id).checked=!!v;}
+function fmtTime(dt){ const d=new Date(dt); return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
+function fmtDate(dt){ const d=new Date(dt); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function todayJPHeader(dt){ const d=new Date(dt); return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`; }
+function weekStartMonday(dt){ const d=new Date(dt); const wd=(d.getDay()+6)%7; d.setHours(0,0,0,0); d.setDate(d.getDate()-wd); return d; }
 
-        let subSpeedActual = 0;
-        if (document.getElementById('sub-speed-m').checked) subSpeedActual -= 0.14;
-        if (document.getElementById('sub-speed-s').checked) subSpeedActual -= 0.07;
+/* =========================================================
+   EX好物排他
+========================================================= */
+function toggleExFav(t){
+  if(t==='minus' && chk('ex-fav-minus')) setChk('ex-fav-plus',false);
+  else if(t==='plus' && chk('ex-fav-plus')) setChk('ex-fav-minus',false);
+  updateCalculations(); saveConfig();
+}
 
-        const teamOtomo = parseInt(document.getElementById('team-otomo').value);
-        subSpeedActual -= (teamOtomo * 0.05);
-        if (subSpeedActual < -0.35) subSpeedActual = -0.35;
+/* =========================================================
+   ポケモン切替
+========================================================= */
+function onPokemonChange(silent){
+  const key = val('pokemon');
+  const p = POKEMON[key];
+  document.getElementById('pk-base-period').textContent = p.basePeriod;
+  document.getElementById('pk-base-prob').textContent = (p.baseProb*100).toFixed(1);
+  document.getElementById('pk-ceiling').textContent = p.ceiling;
+  document.getElementById('pkm-badge').textContent = p.name;
+  if(!silent){ saveConfig(); updateCalculations(); }
+}
 
-        const gamePeriod = Math.floor(BASE_PERIOD * (1 + natureSpeedBonus) * (1 + subSpeedActual) * lvlBonus);
+/* =========================================================
+   計算
+========================================================= */
+function updateCalculations(){
+  const pk = POKEMON[val('pokemon')];
+  const lvl = parseInt(val('pokemon-lvl'))||1;
+  const lvlBonus = 1 - (lvl-1)*0.002;
+  const natOpt = document.getElementById('nature').options[document.getElementById('nature').selectedIndex];
+  const nSpeed = parseFloat(natOpt.dataset.speed);
+  const nSkill = parseFloat(natOpt.dataset.skill);
 
-        const displayMin = Math.floor(gamePeriod / 60);
-        const displaySec = gamePeriod % 60;
-        document.getElementById('calculated-period').textContent = `${displayMin}分${displaySec}秒`;
+  let subSpeed = 0;
+  if(chk('sub-speed-m')) subSpeed -= 0.14;
+  if(chk('sub-speed-s')) subSpeed -= 0.07;
+  const otomo = parseInt(val('team-otomo'));
+  subSpeed -= otomo*0.05;
+  if(subSpeed < -0.35) subSpeed = -0.35;
 
-        let activePeriod = BASE_PERIOD * (1 + natureSpeedBonus) * (1 + subSpeedActual) * lvlBonus;
+  const gamePeriod = Math.floor(pk.basePeriod*(1+nSpeed)*(1+subSpeed)*lvlBonus);
+  document.getElementById('calculated-period').textContent = `${Math.floor(gamePeriod/60)}分${gamePeriod%60}秒`;
 
-        if (document.getElementById('camp-ticket').checked) {
-            activePeriod = activePeriod / 1.2;
-        }
+  let activePeriod = pk.basePeriod*(1+nSpeed)*(1+subSpeed)*lvlBonus;
+  if(chk('camp-ticket')) activePeriod /= 1.2;
+  if(chk('ex-fav-minus')) activePeriod *= 0.90;
+  else if(chk('ex-fav-plus')) activePeriod *= 1.10;
 
-        if (document.getElementById('ex-fav-minus').checked) {
-            activePeriod = activePeriod * 0.90;
-        } else if (document.getElementById('ex-fav-plus').checked) {
-            activePeriod = activePeriod * 1.10;
-        }
+  let subProb = 0;
+  if(chk('sub-prob-m')) subProb += 0.36;
+  if(chk('sub-prob-s')) subProb += 0.18;
+  let finalProb = pk.baseProb*(1+subProb)*nSkill;
+  if(chk('event-skill-buff')) finalProb *= 1.25;
+  document.getElementById('calculated-prob').textContent = (finalProb*100).toFixed(2)+'%';
 
-        let subProbBonus = 0;
-        if (document.getElementById('sub-prob-m').checked) subProbBonus += 0.36;
-        if (document.getElementById('sub-prob-s').checked) subProbBonus += 0.18;
+  // 天井考慮:  ceilingProb=(1-p)^N,  effectiveProb = p/(1-ceilingProb)
+  const ceilProb = Math.pow(1-finalProb, pk.ceiling);
+  const effectiveProb = finalProb / (1 - ceilProb);
+  document.getElementById('ceiling-prob').textContent = (effectiveProb*100).toFixed(2)+'%';
 
-        let finalProb = BASE_PROB * (1 + subProbBonus) * natureSkillBonus;
+  const hourly = (3600/activePeriod)*effectiveProb;
+  document.getElementById('hourly-exp').textContent = hourly.toFixed(5);
 
-        if (document.getElementById('event-skill-buff').checked) {
-            finalProb = finalProb * 1.25;
-        }
+  updateSessionDashboard();
+}
 
-        document.getElementById('calculated-prob').textContent = (finalProb * 100).toFixed(1) + "%";
+/* =========================================================
+   セッション制御
+========================================================= */
+function startSession(){
+  if(session && session.events.length>0){
+    if(!confirm('現在のセッションを破棄して開始しますか？（本日のログには保存されません）')) return;
+  }
+  session = { pokemon: val('pokemon'), startTime: Date.now(), events: [] };
+  energyState = { baseVal:100, lastUpdate: Date.now() };
+  saveSession(); saveEnergy();
+  addLog(`▶ 計測開始 (${fmtTime(session.startTime)}, ${POKEMON[session.pokemon].name})`);
+  updateSessionDashboard();
+}
 
-        const hourlyExp = (3600 / activePeriod) * finalProb;
-        document.getElementById('hourly-exp').textContent = hourlyExp.toFixed(5);
+function manualStart(){
+  const t = val('manual-start-time'); if(!t){ alert('時刻を選んでください'); return; }
+  const [h,m] = t.split(':').map(Number);
+  const d = new Date(); d.setHours(h,m,0,0);
+  if(d > new Date()) d.setDate(d.getDate()-1);
+  session = { pokemon: val('pokemon'), startTime: d.getTime(), events: [] };
+  energyState = { baseVal:100, lastUpdate:d.getTime() };
+  saveSession(); saveEnergy();
+  addLog(`▶ 手動開始 (${fmtTime(d)}, ${POKEMON[session.pokemon].name})`);
+  updateSessionDashboard();
+}
 
-        updateDashboard();
-    }
+function recordEvent(type){
+  if(!session){ alert('先に「計測開始」を押してください'); return; }
+  const now = Date.now();
+  const before = getLiveEnergy();
+  session.events.push({ time: now, type });
+  if(type!=='miss'){
+    const heal = getHealAmount() * (type==='two'?2:1);
+    energyState.baseVal = Math.min(150, before + heal);
+    energyState.lastUpdate = now;
+  }
+  saveSession(); saveEnergy();
+  const lbl = type==='miss'?'不発':(type==='one'?'1回発動':'2回発動');
+  addLog(`${fmtTime(now)} ${lbl} (げんき ${Math.floor(before)}% → ${Math.floor(getLiveEnergy())}%)`);
+  updateSessionDashboard();
+}
 
-    function getLiveEnergy() {
-        if (!lastEnergyUpdateIdxTime) return baseEnergyVal;
-        const now = new Date();
-        const elapsedMinutes = (now - lastEnergyUpdateIdxTime) / (1000 * 60);
-        const dropAmount = elapsedMinutes / 10;
-        return Math.max(0, baseEnergyVal - dropAmount);
-    }
+function manualAddEvent(){
+  if(!session){ alert('先に「計測開始」を押してください'); return; }
+  const t = val('manual-evt-time'); const ty = val('manual-evt-type');
+  if(!t){ alert('時刻を選んでください'); return; }
+  const [h,m] = t.split(':').map(Number);
+  const d = new Date(session.startTime);
+  d.setHours(h,m,0,0);
+  if(d < new Date(session.startTime)) d.setDate(d.getDate()+1);
+  session.events.push({ time: d.getTime(), type: ty });
+  session.events.sort((a,b)=>a.time-b.time);
+  saveSession();
+  const lbl = ty==='miss'?'不発':(ty==='one'?'1回発動':'2回発動');
+  addLog(`⤵ 手動追加 ${fmtTime(d)} ${lbl}`);
+  updateSessionDashboard();
+}
 
-    function setManualEnergy() {
-        const val = parseFloat(document.getElementById('manual-energy').value);
-        if (!isNaN(val)) {
-            baseEnergyVal = Math.min(150, Math.max(0, val));
-            lastEnergyUpdateIdxTime = new Date();
-            addLog(`手動でげんき度を ${Math.floor(baseEnergyVal)}% に設定しました`);
-            updateDashboard();
-        }
-    }
+function undoLast(){
+  if(!session || !session.events.length) return;
+  const last = session.events.pop();
+  saveSession();
+  addLog(`↩ 取消: ${fmtTime(last.time)} ${last.type}`);
+  updateSessionDashboard();
+}
 
-    function getHealAmount() {
-        const lv = parseInt(document.getElementById('skill-lv').value);
-        let heal = HEAL_TABLE[lv] || 5;
+function resetSession(){
+  if(!confirm('セッションを破棄します（本日のログには残りません）。よろしいですか？')) return;
+  session = null; saveSession();
+  document.getElementById('log-list').innerHTML='';
+  updateSessionDashboard();
+}
 
-        const natureSelect = document.getElementById('nature');
-        const natureEnergyBonus = parseFloat(natureSelect.options[natureSelect.selectedIndex].getAttribute('data-energy'));
+function endDay(){
+  if(!session){ alert('セッションが未開始です'); return; }
+  const endT = Date.now();
+  const elapsedH = (endT - session.startTime)/3600000;
+  const miss = session.events.filter(e=>e.type==='miss').length;
+  const one  = session.events.filter(e=>e.type==='one').length;
+  const two  = session.events.filter(e=>e.type==='two').length;
+  const procs = one + two*2;
+  const hourly = parseFloat(document.getElementById('hourly-exp').textContent);
+  const expected = elapsedH * hourly;
+  const diff = procs - expected;
 
-        heal = Math.floor(heal * natureEnergyBonus);
-        return heal;
-    }
+  const entry = {
+    date: fmtDate(session.startTime),
+    pokemon: POKEMON[session.pokemon].name,
+    startTime: session.startTime,
+    endTime: endT,
+    elapsedH: Number(elapsedH.toFixed(2)),
+    miss, one, two, procs,
+    expected: Number(expected.toFixed(2)),
+    diff: Number(diff.toFixed(2)),
+  };
+  dailyLogs.push(entry);
+  saveLogs();
+  session = null; saveSession();
 
-    function startTracking() {
-        if(confirm("すべての記録をリセットして新しく計測を開始しますか？")) {
-            startTime = new Date();
-            lastEnergyUpdateIdxTime = new Date();
-            baseEnergyVal = 100;
-            actualCount = 0;
-            logs = [];
-            document.getElementById('log-list').innerHTML = "";
-            addLog("計測を開始しました (初期げんき度:100%)");
+  alert(`📊 ${entry.date} のサマリー\n`+
+    `ポケモン: ${entry.pokemon}\n`+
+    `計測: ${entry.elapsedH}時間\n`+
+    `不発: ${miss} / 1回: ${one} / 2回: ${two}\n`+
+    `実発動回数: ${procs}\n`+
+    `期待値: ${entry.expected}\n`+
+    `${diff>=0?'⬆ 上振れ +':'⬇ 下振れ '}${entry.diff}`);
 
-            if(timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(updateDashboard, 5000);
+  document.getElementById('log-list').innerHTML='';
+  updateSessionDashboard();
+  renderWeekly();
+}
 
-            updateCalculations();
-        }
-    }
+/* =========================================================
+   ダッシュボード更新
+========================================================= */
+function updateSessionDashboard(){
+  const ss = document.getElementById('session-state');
+  const st = document.getElementById('session-start');
+  if(!session){
+    ss.textContent='未開始'; st.textContent='--:--';
+    document.getElementById('elapsed-time').textContent='0.0h';
+    document.getElementById('expected-count').textContent='0.00';
+    document.getElementById('diff-count').textContent='±0.00';
+    document.getElementById('diff-count').className='stat-val';
+    ['miss-count','one-count','two-count','btn-miss','btn-one','btn-two'].forEach(id=>document.getElementById(id).textContent='0');
+    updateEnergyDisplay(); return;
+  }
+  ss.textContent = '計測中'; st.textContent = fmtTime(session.startTime);
+  const now=Date.now();
+  const elapsedH=(now-session.startTime)/3600000;
+  const hourly = parseFloat(document.getElementById('hourly-exp').textContent);
+  const expected = elapsedH*hourly;
+  const miss = session.events.filter(e=>e.type==='miss').length;
+  const one  = session.events.filter(e=>e.type==='one').length;
+  const two  = session.events.filter(e=>e.type==='two').length;
+  const procs= one+two*2;
+  const diff = procs - expected;
 
-    function recordSkill() {
-        if(!startTime) {
-            alert("先に「計測開始 / 全リセット」ボタンを押してください。");
-            return;
-        }
-        actualCount++;
+  document.getElementById('elapsed-time').textContent = elapsedH.toFixed(1)+'h';
+  document.getElementById('expected-count').textContent = expected.toFixed(2);
+  document.getElementById('miss-count').textContent = miss;
+  document.getElementById('one-count').textContent = one;
+  document.getElementById('two-count').textContent = two;
+  document.getElementById('btn-miss').textContent = miss;
+  document.getElementById('btn-one').textContent = one;
+  document.getElementById('btn-two').textContent = two;
 
-        const beforeEnergy = getLiveEnergy();
-        const healAmount = getHealAmount();
-        const afterEnergy = Math.min(150, beforeEnergy + healAmount);
+  const de = document.getElementById('diff-count');
+  if(diff>=0){ de.textContent='+'+diff.toFixed(2); de.className='stat-val plus'; }
+  else { de.textContent=diff.toFixed(2); de.className='stat-val minus'; }
+  updateEnergyDisplay();
+}
 
-        baseEnergyVal = afterEnergy;
-        lastEnergyUpdateIdxTime = new Date();
+/* =========================================================
+   げんき
+========================================================= */
+function getLiveEnergy(){
+  if(!energyState.lastUpdate) return energyState.baseVal;
+  const el = (Date.now()-energyState.lastUpdate)/60000;
+  return Math.max(0, energyState.baseVal - el/10);
+}
+function setManualEnergy(){
+  const v = parseFloat(val('manual-energy'));
+  if(isNaN(v)) return;
+  energyState.baseVal = Math.min(150, Math.max(0,v));
+  energyState.lastUpdate = Date.now();
+  saveEnergy();
+  addLog(`げんき度を ${Math.floor(energyState.baseVal)}% に手動設定`);
+  updateEnergyDisplay();
+}
+function getHealAmount(){
+  const lv=parseInt(val('skill-lv'));
+  let heal = HEAL_TABLE[lv]||5;
+  const natOpt = document.getElementById('nature').options[document.getElementById('nature').selectedIndex];
+  heal = Math.floor(heal * parseFloat(natOpt.dataset.energy));
+  return heal;
+}
+function updateEnergyDisplay(){
+  const live = getLiveEnergy();
+  document.getElementById('cur-energy').textContent = Math.floor(live)+'%';
+  const p = document.getElementById('predict80');
+  if(live<=80){ p.textContent='すでに80%未満'; p.style.color='#e53e3e'; }
+  else{
+    const m = (live-80)*10;
+    const t = new Date(Date.now()+m*60000);
+    p.textContent = fmtTime(t); p.style.color='#2d3748';
+  }
+}
 
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        addLog(`${timeStr} スキル発動 (げんき: ${Math.floor(beforeEnergy)}% → ${Math.floor(afterEnergy)}%)`);
+/* =========================================================
+   ログ表示
+========================================================= */
+function addLog(text){
+  const ul=document.getElementById('log-list');
+  const li=document.createElement('li'); li.textContent=text;
+  ul.insertBefore(li, ul.firstChild);
+}
+function renderTodayLog(){
+  const ul=document.getElementById('log-list'); ul.innerHTML='';
+  if(!session) return;
+  const items = [];
+  items.push(`▶ 開始 ${fmtTime(session.startTime)} (${POKEMON[session.pokemon].name})`);
+  session.events.forEach(e=>{
+    const lbl = e.type==='miss'?'不発':(e.type==='one'?'1回発動':'2回発動');
+    items.push(`${fmtTime(e.time)} ${lbl}`);
+  });
+  items.reverse().forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); });
+}
 
-        updateDashboard();
-    }
+/* =========================================================
+   週次ログ
+========================================================= */
+function renderWeekly(){
+  const container=document.getElementById('weekly-container');
+  container.innerHTML='';
+  if(!dailyLogs.length){ container.innerHTML='<p style="font-size:.8rem;color:#718096;">まだ週次ログはありません。</p>'; return; }
+  const groups={};
+  dailyLogs.forEach(log=>{
+    const ws = weekStartMonday(log.startTime);
+    const key = fmtDate(ws);
+    if(!groups[key]) groups[key]={weekStart:ws, entries:[]};
+    groups[key].entries.push(log);
+  });
+  Object.keys(groups).sort().reverse().forEach(k=>{
+    const g=groups[k];
+    const div=document.createElement('div'); div.className='weekly-block';
+    let sumProcs=0, sumExp=0, sumHours=0;
+    const lines = g.entries.sort((a,b)=>a.startTime-b.startTime).map(e=>{
+      sumProcs+=e.procs; sumExp+=e.expected; sumHours+=e.elapsedH;
+      const arrow = e.diff>=0?`⬆+${e.diff}`:`⬇${e.diff}`;
+      return `${todayJPHeader(e.startTime)}(${e.pokemon}) 計測${e.elapsedH}h 実発動${e.procs}回 期待${e.expected} ${arrow} [不発${e.miss}/1回${e.one}/2回${e.two}]`;
+    });
+    const weekDiff = (sumProcs-sumExp).toFixed(2);
+    div.innerHTML = `<h4>${todayJPHeader(g.weekStart)}週 の記録</h4>`+
+      lines.map(l=>`<div>・${l}</div>`).join('')+
+      `<div style="margin-top:4px;font-weight:bold;">週合計: ${sumHours.toFixed(1)}h / 実${sumProcs}回 / 期待${sumExp.toFixed(2)} / ${weekDiff>=0?'+':''}${weekDiff}</div>`;
+    container.appendChild(div);
+  });
+}
 
-    function addLog(text) {
-        logs.unshift(text);
-        const list = document.getElementById('log-list');
-        list.innerHTML = logs.map(log => `<li>${log}</li>`).join('');
-    }
+/* =========================================================
+   エクスポート / インポート
+========================================================= */
+function exportData(){
+  const payload = { version:8, exportedAt: new Date().toISOString(), dailyLogs, config:JSON.parse(localStorage.getItem(K_CFG)||'{}') };
+  document.getElementById('import-area').value = JSON.stringify(payload,null,2);
+  alert('テキスト欄に書き出しました。全選択してコピーして保管してください。');
+}
+function importData(){
+  const raw = document.getElementById('import-area').value.trim();
+  if(!raw){ alert('テキストがありません'); return; }
+  try{
+    const obj = JSON.parse(raw);
+    if(!obj.dailyLogs){ alert('形式が違います'); return; }
+    if(!confirm('現在のログを上書きして復元しますか？')) return;
+    dailyLogs = obj.dailyLogs;
+    saveLogs();
+    if(obj.config){ localStorage.setItem(K_CFG, JSON.stringify(obj.config)); loadConfig(); onPokemonChange(true); updateCalculations(); }
+    renderWeekly();
+    alert('復元しました');
+  }catch(e){ alert('JSONの解析に失敗しました: '+e.message); }
+}
+function clearAllData(){
+  if(!confirm('本当に全データを削除しますか？（設定・セッション・週次ログすべて）')) return;
+  if(!confirm('本当に本当によろしいですか？取り消せません。')) return;
+  [K_CFG,K_SESS,K_LOGS,K_ENERGY].forEach(k=>localStorage.removeItem(k));
+  location.reload();
+}
 
-    function updateDashboard() {
-        if(!startTime) return;
+/* =========================================================
+   タイマーループ
+========================================================= */
+function startTimerLoop(){
+  if(timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(()=>{ updateSessionDashboard(); }, 5000);
+}
 
-        const now = new Date();
-        const elapsedHours = (now - startTime) / (1000 * 60 * 60);
-        const hourlyExp = parseFloat(document.getElementById('hourly-exp').textContent);
-
-        const expected = elapsedHours * hourlyExp;
-        const diff = actualCount - expected;
-
-        document.getElementById('elapsed-time').textContent = elapsedHours.toFixed(1) + "h";
-        document.getElementById('expected-count').textContent = expected.toFixed(2);
-        document.getElementById('actual-count').textContent = actualCount;
-
-        const diffEl = document.getElementById('diff-count');
-        if(diff >= 0) {
-            diffEl.textContent = `+${diff.toFixed(2)}`;
-            diffEl.className = "stat-val plus";
-        } else {
-            diffEl.textContent = `${diff.toFixed(2)}`;
-            diffEl.className = "stat-val minus";
-        }
-
-        const liveEnergy = getLiveEnergy();
-        document.getElementById('current-energy').textContent = Math.floor(liveEnergy) + "%";
-
-        const predictEl = document.getElementById('predict-time');
-        if (liveEnergy <= 80) {
-            predictEl.textContent = "すでに80%未満";
-            predictEl.style.color = "#e53e3e";
-        } else {
-            const minutesTo80 = (liveEnergy - 80) * 10;
-            const targetTime = new Date(now.getTime() + minutesTo80 * 60 * 1000);
-            predictEl.textContent = targetTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            predictEl.style.color = "#2d3748";
-        }
-    }
-
-    updateCalculations();
+/* =========================================================
+   最初の描画
+========================================================= */
+function renderAll(){
+  renderTodayLog();
+  renderWeekly();
+  updateSessionDashboard();
+}
 </script>
-
 </body>
 </html>
