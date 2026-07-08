@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ポケスリ スキル＆げんきカウンター V8</title>
+<title>ポケスリ スキル＆げんきカウンター V10</title>
 <style>
   :root{--primary:#68d391;--bg:#f7fafc;--card:#fff;--txt:#2d3748;--accent:#2b6cb0;}
   *{box-sizing:border-box;}
@@ -14,17 +14,19 @@
   .box{background:#edf2f7;padding:12px;border-radius:8px;margin-bottom:12px;font-size:.85rem;}
   .row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;}
   .row:last-child{margin-bottom:0;}
-  select,input[type="number"],input[type="time"],input[type="date"]{padding:4px;border:1px solid #cbd5e0;border-radius:4px;background:#fff;font-size:.85rem;max-width:260px;}
+  select,input[type="number"],input[type="time"],input[type="date"],input[type="file"]{padding:4px;border:1px solid #cbd5e0;border-radius:4px;background:#fff;font-size:.85rem;max-width:260px;}
   .chk-group{display:flex;gap:12px;flex-wrap:wrap;}
   .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
   .stat{background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center;font-size:.78rem;}
   .stat.full{grid-column:span 2;}
   .stat.hl{background:#ebf8ff;border-color:#bee3f8;}
   .stat.energy{background:#fffaf0;border-color:#feebc8;}
+  .stat.loss{background:#fff5f5;border-color:#fed7d7;}
   .stat-val{font-size:1.25rem;font-weight:bold;margin-top:4px;}
   .stat-val.plus{color:#38a169;}
   .stat-val.minus{color:#e53e3e;}
   .stat-val.energy{color:#dd6b20;}
+  .stat-val.loss{color:#c53030;}
   .btn-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;}
   .btn{border:none;border-radius:10px;padding:14px 4px;font-size:.9rem;font-weight:bold;cursor:pointer;color:#fff;box-shadow:0 3px 8px rgba(0,0,0,.12);}
   .btn:active{transform:scale(.97);}
@@ -44,12 +46,13 @@
   .status-line .kv{display:flex;gap:16px;white-space:nowrap;overflow-x:auto;}
   .badge{display:inline-block;background:var(--accent);color:#fff;padding:1px 6px;border-radius:10px;font-size:.7rem;margin-left:4px;}
   details summary{cursor:pointer;font-weight:bold;font-size:.9rem;color:#4a5568;margin-bottom:6px;}
+  .hint{font-size:.72rem;color:#718096;margin-top:4px;}
 </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>ポケスリ カウンター V8 <span id="pkm-badge" class="badge">サーナイト</span></h1>
+  <h1>ポケスリ カウンター V10 <span id="pkm-badge" class="badge">サーナイト</span></h1>
 
   <!-- ▼ ポケモン切替 -->
   <div class="section-title">ポケモン選択</div>
@@ -65,7 +68,7 @@
       </select>
     </div>
     <div class="row" style="font-size:.75rem;color:#718096;">
-      <span>お手伝い時間 <span id="pk-base-period">--</span>秒 / 基本確率 <span id="pk-base-prob">--</span>% / 天井 <span id="pk-ceiling">--</span>回</span>
+      <span>お手伝い時間 <span id="pk-base-period">--</span>秒 / 基本確率 <span id="pk-base-prob">--</span>% / 天井 <span id="pk-ceiling">--</span>回 / ストック上限 <span id="pk-stock">2</span>回</span>
     </div>
   </div>
 
@@ -151,6 +154,11 @@
       <label>EXバフ:</label>
       <label><input type="checkbox" id="event-skill-buff" onchange="updateCalculations();saveConfig();">スキル発生 1.25倍</label>
     </div>
+    <div class="row">
+      <label>ストック補正:</label>
+      <label><input type="checkbox" id="stock-correction" checked onchange="saveConfig();updateSessionDashboard();">放置時のロスを差し引く</label>
+    </div>
+    <div class="hint">※ 元気81%以上を維持する前提で、実速度は表示×2.22倍で計算しています。<br>※ 2時間以上タップ間隔が空いたら、2回ストック超過による理論ロスをポアソン計算で差し引きます。</div>
 
     <div class="status-line">
       <div class="kv">
@@ -171,11 +179,12 @@
     </div>
     <div class="stat-grid" style="margin-top:8px;">
       <div class="stat"><div>経過時間</div><div class="stat-val" id="elapsed-time">0.0h</div></div>
-      <div class="stat"><div>期待値(天井込)</div><div class="stat-val" id="expected-count">0.00</div></div>
+      <div class="stat"><div>実効期待値</div><div class="stat-val" id="expected-count">0.00</div></div>
       <div class="stat full hl"><div>期待値との差分</div><div class="stat-val" id="diff-count">±0.00</div></div>
       <div class="stat"><div>不発</div><div class="stat-val" id="miss-count" style="color:#718096;">0</div></div>
       <div class="stat"><div>1回発動</div><div class="stat-val" id="one-count" style="color:#38a169;">0</div></div>
-      <div class="stat full"><div>2回発動</div><div class="stat-val" id="two-count" style="color:#4299e1;">0</div></div>
+      <div class="stat"><div>2回発動</div><div class="stat-val" id="two-count" style="color:#4299e1;">0</div></div>
+      <div class="stat full loss"><div>推定ロス（ストック超過）</div><div class="stat-val loss" id="stock-loss">0.00</div></div>
     </div>
 
     <div class="btn-row">
@@ -239,22 +248,29 @@
   <ul class="log-list" id="log-list"></ul>
 </div>
 
-<!-- ▼ 週次ログ -->
+<!-- ▼ 週次ログ・データ管理 -->
 <div class="container">
   <div class="section-title">週次ログ（過去の記録）</div>
   <div id="weekly-container"></div>
 
-  <details style="margin-top:12px;">
-    <summary>データ管理（バックアップ / 復元）</summary>
+  <details style="margin-top:12px;" open>
+    <summary>データ管理（バックアップ / 復元 / 別ブラウザ移行）</summary>
     <div style="margin-top:8px;">
+      <p class="hint">💾 <b>ファイル書き出し/読み込み</b>（別ブラウザや機種変で使用）</p>
       <div class="util-btns">
-        <button class="primary" onclick="exportData()">📤 テキスト書き出し</button>
+        <button class="primary" onclick="exportFile()">📥 JSONファイルで保存</button>
+        <label style="display:block;margin:0;">
+          <input type="file" id="import-file" accept=".json" onchange="importFile(event)" style="width:100%;">
+        </label>
+      </div>
+      <p class="hint" style="margin-top:10px;">📋 <b>テキストコピペ</b>（今まで通り）</p>
+      <div class="util-btns">
+        <button onclick="exportText()">📤 テキスト書き出し</button>
         <button onclick="document.getElementById('import-area').focus()">📥 読み込み欄へ</button>
       </div>
-      <p style="font-size:.75rem;color:#718096;margin:6px 0;">下のテキストをコピーして保管、または貼り付けて復元してください。</p>
       <textarea id="import-area" placeholder="ここにバックアップテキストを貼り付け"></textarea>
       <div class="util-btns" style="margin-top:6px;">
-        <button onclick="importData()">💾 このテキストで復元</button>
+        <button onclick="importText()">💾 このテキストで復元</button>
         <button class="danger" onclick="clearAllData()">🗑 全データ削除</button>
       </div>
     </div>
@@ -263,34 +279,29 @@
 
 <script>
 /* =========================================================
-   ポケモンプリセット（RaenonX / おがのブログ準拠 2026-07時点）
-   ※ ツボツボ天井は暫定値。正確な値が判明したら書き換え可
+   V10: げんき81%以上維持前提の実速度補正 + ポアソンロス補正
 ========================================================= */
 const POKEMON = {
-  gardevoir :{name:'サーナイト',basePeriod:2400,baseProb:0.042,ceiling:60},
-  pawmot    :{name:'パーモット',basePeriod:2400,baseProb:0.039,ceiling:60},
-  sylveon   :{name:'ニンフィア',basePeriod:2600,baseProb:0.040,ceiling:55},
-  wigglytuff:{name:'プクリン',  basePeriod:2750,baseProb:0.040,ceiling:49},
-  shuckle   :{name:'ツボツボ',  basePeriod:3600,baseProb:0.059,ceiling:78},
+  gardevoir :{name:'サーナイト',basePeriod:2400,baseProb:0.042,ceiling:60,stockCap:2},
+  pawmot    :{name:'パーモット',basePeriod:2400,baseProb:0.039,ceiling:60,stockCap:2},
+  sylveon   :{name:'ニンフィア',basePeriod:2600,baseProb:0.040,ceiling:55,stockCap:2},
+  wigglytuff:{name:'プクリン',  basePeriod:2750,baseProb:0.040,ceiling:49,stockCap:2},
+  shuckle   :{name:'ツボツボ',  basePeriod:3600,baseProb:0.059,ceiling:78,stockCap:2},
 };
 const HEAL_TABLE = {1:5,2:7,3:9,4:11,5:15,6:18};
+const GAP_THRESHOLD_HOURS = 2;  // これ以上空いたらロス計算
+const GENKI_MULTIPLIER = 0.45;  // ★ V10: げんき81%以上維持前提の速度補正
 
-/* =========================================================
-   ストレージキー
-========================================================= */
-const K_CFG='skv8:config', K_SESS='skv8:session', K_LOGS='skv8:dailyLogs', K_ENERGY='skv8:energy';
+/* ストレージキー（V10用に変更） */
+const K_CFG='skv10:config', K_SESS='skv10:session', K_LOGS='skv10:dailyLogs', K_ENERGY='skv10:energy';
 
-/* =========================================================
-   状態
-========================================================= */
+/* 状態 */
 let session = null;
 let dailyLogs = [];
 let energyState = {baseVal:100, lastUpdate:null};
 let timerInterval = null;
 
-/* =========================================================
-   初期化
-========================================================= */
+/* 初期化 */
 window.addEventListener('load', ()=>{
   loadAll();
   updateCalculations();
@@ -299,20 +310,35 @@ window.addEventListener('load', ()=>{
 });
 
 /* =========================================================
+   ポアソン分布によるストック超過ロス計算
+========================================================= */
+function factorial(n){ let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
+function poisson(k, lam){ return Math.pow(lam,k) * Math.exp(-lam) / factorial(k); }
+
+function calcStockLoss(gapHours, hourlyExpected, stockCap){
+  const lam = gapHours * hourlyExpected;
+  if(lam < 0.01) return 0;
+  let loss = 0;
+  const kMax = Math.max(30, Math.ceil(lam*4));
+  for(let k=stockCap+1; k<=kMax; k++){
+    loss += poisson(k, lam) * (k - stockCap);
+  }
+  return loss;
+}
+
+/* =========================================================
    ストレージ
 ========================================================= */
 function saveConfig(){
   const cfg = {
-    pokemon:val('pokemon'),
-    level:val('pokemon-lvl'),
-    nature:val('nature'),
+    pokemon:val('pokemon'), level:val('pokemon-lvl'), nature:val('nature'),
     probM:chk('sub-prob-m'), probS:chk('sub-prob-s'),
     speedM:chk('sub-speed-m'), speedS:chk('sub-speed-s'),
-    otomo:val('team-otomo'),
-    skillLv:val('skill-lv'),
+    otomo:val('team-otomo'), skillLv:val('skill-lv'),
     camp:chk('camp-ticket'),
     exMinus:chk('ex-fav-minus'), exPlus:chk('ex-fav-plus'),
     exBuff:chk('event-skill-buff'),
+    stockCorr:chk('stock-correction'),
   };
   localStorage.setItem(K_CFG, JSON.stringify(cfg));
 }
@@ -320,14 +346,14 @@ function loadConfig(){
   const raw = localStorage.getItem(K_CFG); if(!raw) return;
   try{
     const c = JSON.parse(raw);
-    setVal('pokemon',c.pokemon); setVal('pokemon-lvl',c.level);
-    setVal('nature',c.nature);
+    setVal('pokemon',c.pokemon); setVal('pokemon-lvl',c.level); setVal('nature',c.nature);
     setChk('sub-prob-m',c.probM); setChk('sub-prob-s',c.probS);
     setChk('sub-speed-m',c.speedM); setChk('sub-speed-s',c.speedS);
     setVal('team-otomo',c.otomo); setVal('skill-lv',c.skillLv);
     setChk('camp-ticket',c.camp);
     setChk('ex-fav-minus',c.exMinus); setChk('ex-fav-plus',c.exPlus);
     setChk('event-skill-buff',c.exBuff);
+    if(c.stockCorr!==undefined) setChk('stock-correction',c.stockCorr);
   }catch(e){}
 }
 function saveSession(){ if(session) localStorage.setItem(K_SESS, JSON.stringify(session)); else localStorage.removeItem(K_SESS); }
@@ -338,43 +364,32 @@ function saveEnergy(){ localStorage.setItem(K_ENERGY, JSON.stringify(energyState
 function loadEnergy(){ const raw=localStorage.getItem(K_ENERGY); if(raw){ try{energyState=JSON.parse(raw);}catch(e){} } }
 function loadAll(){ loadConfig(); loadSession(); loadLogs(); loadEnergy(); onPokemonChange(true); }
 
-/* =========================================================
-   ヘルパ
-========================================================= */
+/* ヘルパ */
 function val(id){return document.getElementById(id).value;}
 function setVal(id,v){if(v!==undefined&&v!==null){document.getElementById(id).value=v;}}
 function chk(id){return document.getElementById(id).checked;}
 function setChk(id,v){document.getElementById(id).checked=!!v;}
-function fmtTime(dt){ const d=new Date(dt); return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
+function fmtTime(dt){ return new Date(dt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
 function fmtDate(dt){ const d=new Date(dt); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function todayJPHeader(dt){ const d=new Date(dt); return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`; }
 function weekStartMonday(dt){ const d=new Date(dt); const wd=(d.getDay()+6)%7; d.setHours(0,0,0,0); d.setDate(d.getDate()-wd); return d; }
 
-/* =========================================================
-   EX好物排他
-========================================================= */
 function toggleExFav(t){
   if(t==='minus' && chk('ex-fav-minus')) setChk('ex-fav-plus',false);
   else if(t==='plus' && chk('ex-fav-plus')) setChk('ex-fav-minus',false);
   updateCalculations(); saveConfig();
 }
 
-/* =========================================================
-   ポケモン切替
-========================================================= */
 function onPokemonChange(silent){
-  const key = val('pokemon');
-  const p = POKEMON[key];
+  const p = POKEMON[val('pokemon')];
   document.getElementById('pk-base-period').textContent = p.basePeriod;
   document.getElementById('pk-base-prob').textContent = (p.baseProb*100).toFixed(1);
   document.getElementById('pk-ceiling').textContent = p.ceiling;
+  document.getElementById('pk-stock').textContent = p.stockCap;
   document.getElementById('pkm-badge').textContent = p.name;
   if(!silent){ saveConfig(); updateCalculations(); }
 }
 
-/* =========================================================
-   計算
-========================================================= */
 function updateCalculations(){
   const pk = POKEMON[val('pokemon')];
   const lvl = parseInt(val('pokemon-lvl'))||1;
@@ -386,18 +401,21 @@ function updateCalculations(){
   let subSpeed = 0;
   if(chk('sub-speed-m')) subSpeed -= 0.14;
   if(chk('sub-speed-s')) subSpeed -= 0.07;
-  const otomo = parseInt(val('team-otomo'));
-  subSpeed -= otomo*0.05;
+  subSpeed -= parseInt(val('team-otomo'))*0.05;
   if(subSpeed < -0.35) subSpeed = -0.35;
 
+  // 表示おてつだい時間（ゲーム内ステータス画面と一致）
   const gamePeriod = Math.floor(pk.basePeriod*(1+nSpeed)*(1+subSpeed)*lvlBonus);
   document.getElementById('calculated-period').textContent = `${Math.floor(gamePeriod/60)}分${gamePeriod%60}秒`;
 
+  // 実効お手伝い時間 = 表示時間 × げんき補正(0.45) × 各種フィールド補正
   let activePeriod = pk.basePeriod*(1+nSpeed)*(1+subSpeed)*lvlBonus;
+  activePeriod *= GENKI_MULTIPLIER;  // ★ V10 追加: げんき81%以上維持前提
   if(chk('camp-ticket')) activePeriod /= 1.2;
   if(chk('ex-fav-minus')) activePeriod *= 0.90;
   else if(chk('ex-fav-plus')) activePeriod *= 1.10;
 
+  // スキル確率
   let subProb = 0;
   if(chk('sub-prob-m')) subProb += 0.36;
   if(chk('sub-prob-s')) subProb += 0.18;
@@ -405,7 +423,7 @@ function updateCalculations(){
   if(chk('event-skill-buff')) finalProb *= 1.25;
   document.getElementById('calculated-prob').textContent = (finalProb*100).toFixed(2)+'%';
 
-  // 天井考慮:  ceilingProb=(1-p)^N,  effectiveProb = p/(1-ceilingProb)
+  // 天井考慮
   const ceilProb = Math.pow(1-finalProb, pk.ceiling);
   const effectiveProb = finalProb / (1 - ceilProb);
   document.getElementById('ceiling-prob').textContent = (effectiveProb*100).toFixed(2)+'%';
@@ -421,12 +439,13 @@ function updateCalculations(){
 ========================================================= */
 function startSession(){
   if(session && session.events.length>0){
-    if(!confirm('現在のセッションを破棄して開始しますか？（本日のログには保存されません）')) return;
+    if(!confirm('現在のセッションを破棄して開始しますか？')) return;
   }
-  session = { pokemon: val('pokemon'), startTime: Date.now(), events: [] };
-  energyState = { baseVal:100, lastUpdate: Date.now() };
+  const now = Date.now();
+  session = { pokemon: val('pokemon'), startTime: now, events: [], stockLosses:0, lastTapTime: now };
+  energyState = { baseVal:100, lastUpdate: now };
   saveSession(); saveEnergy();
-  addLog(`▶ 計測開始 (${fmtTime(session.startTime)}, ${POKEMON[session.pokemon].name})`);
+  addLog(`▶ 計測開始 (${fmtTime(now)}, ${POKEMON[session.pokemon].name})`);
   updateSessionDashboard();
 }
 
@@ -435,16 +454,29 @@ function manualStart(){
   const [h,m] = t.split(':').map(Number);
   const d = new Date(); d.setHours(h,m,0,0);
   if(d > new Date()) d.setDate(d.getDate()-1);
-  session = { pokemon: val('pokemon'), startTime: d.getTime(), events: [] };
+  session = { pokemon: val('pokemon'), startTime: d.getTime(), events: [], stockLosses:0, lastTapTime: d.getTime() };
   energyState = { baseVal:100, lastUpdate:d.getTime() };
   saveSession(); saveEnergy();
   addLog(`▶ 手動開始 (${fmtTime(d)}, ${POKEMON[session.pokemon].name})`);
   updateSessionDashboard();
 }
 
+function accumulateStockLoss(tapTime){
+  if(!session.lastTapTime) { session.lastTapTime = tapTime; return 0; }
+  const gapH = (tapTime - session.lastTapTime) / 3600000;
+  if(gapH < GAP_THRESHOLD_HOURS){ session.lastTapTime = tapTime; return 0; }
+  const hourly = parseFloat(document.getElementById('hourly-exp').textContent);
+  const pk = POKEMON[session.pokemon];
+  const loss = calcStockLoss(gapH, hourly, pk.stockCap);
+  session.stockLosses += loss;
+  session.lastTapTime = tapTime;
+  return loss;
+}
+
 function recordEvent(type){
   if(!session){ alert('先に「計測開始」を押してください'); return; }
   const now = Date.now();
+  const gainedLoss = accumulateStockLoss(now);
   const before = getLiveEnergy();
   session.events.push({ time: now, type });
   if(type!=='miss'){
@@ -454,7 +486,9 @@ function recordEvent(type){
   }
   saveSession(); saveEnergy();
   const lbl = type==='miss'?'不発':(type==='one'?'1回発動':'2回発動');
-  addLog(`${fmtTime(now)} ${lbl} (げんき ${Math.floor(before)}% → ${Math.floor(getLiveEnergy())}%)`);
+  let msg = `${fmtTime(now)} ${lbl} (げんき ${Math.floor(before)}% → ${Math.floor(getLiveEnergy())}%)`;
+  if(gainedLoss > 0.1) msg += ` [推定ロス+${gainedLoss.toFixed(2)}]`;
+  addLog(msg);
   updateSessionDashboard();
 }
 
@@ -466,11 +500,12 @@ function manualAddEvent(){
   const d = new Date(session.startTime);
   d.setHours(h,m,0,0);
   if(d < new Date(session.startTime)) d.setDate(d.getDate()+1);
+  const gainedLoss = accumulateStockLoss(d.getTime());
   session.events.push({ time: d.getTime(), type: ty });
   session.events.sort((a,b)=>a.time-b.time);
   saveSession();
   const lbl = ty==='miss'?'不発':(ty==='one'?'1回発動':'2回発動');
-  addLog(`⤵ 手動追加 ${fmtTime(d)} ${lbl}`);
+  addLog(`⤵ 手動追加 ${fmtTime(d)} ${lbl}${gainedLoss>0.1?` [推定ロス+${gainedLoss.toFixed(2)}]`:''}`);
   updateSessionDashboard();
 }
 
@@ -483,7 +518,7 @@ function undoLast(){
 }
 
 function resetSession(){
-  if(!confirm('セッションを破棄します（本日のログには残りません）。よろしいですか？')) return;
+  if(!confirm('セッションを破棄します。よろしいですか？')) return;
   session = null; saveSession();
   document.getElementById('log-list').innerHTML='';
   updateSessionDashboard();
@@ -492,13 +527,16 @@ function resetSession(){
 function endDay(){
   if(!session){ alert('セッションが未開始です'); return; }
   const endT = Date.now();
+  accumulateStockLoss(endT);
   const elapsedH = (endT - session.startTime)/3600000;
   const miss = session.events.filter(e=>e.type==='miss').length;
   const one  = session.events.filter(e=>e.type==='one').length;
   const two  = session.events.filter(e=>e.type==='two').length;
   const procs = one + two*2;
   const hourly = parseFloat(document.getElementById('hourly-exp').textContent);
-  const expected = elapsedH * hourly;
+  const rawExpected = elapsedH * hourly;
+  const stockLoss = chk('stock-correction') ? session.stockLosses : 0;
+  const expected = Math.max(0, rawExpected - stockLoss);
   const diff = procs - expected;
 
   const entry = {
@@ -508,6 +546,8 @@ function endDay(){
     endTime: endT,
     elapsedH: Number(elapsedH.toFixed(2)),
     miss, one, two, procs,
+    rawExpected: Number(rawExpected.toFixed(2)),
+    stockLoss: Number(session.stockLosses.toFixed(2)),
     expected: Number(expected.toFixed(2)),
     diff: Number(diff.toFixed(2)),
   };
@@ -519,8 +559,10 @@ function endDay(){
     `ポケモン: ${entry.pokemon}\n`+
     `計測: ${entry.elapsedH}時間\n`+
     `不発: ${miss} / 1回: ${one} / 2回: ${two}\n`+
-    `実発動回数: ${procs}\n`+
-    `期待値: ${entry.expected}\n`+
+    `実発動: ${procs}\n`+
+    `理論期待値: ${entry.rawExpected}\n`+
+    `推定ストックロス: -${entry.stockLoss}\n`+
+    `実効期待値: ${entry.expected}\n`+
     `${diff>=0?'⬆ 上振れ +':'⬇ 下振れ '}${entry.diff}`);
 
   document.getElementById('log-list').innerHTML='';
@@ -529,7 +571,7 @@ function endDay(){
 }
 
 /* =========================================================
-   ダッシュボード更新
+   ダッシュボード
 ========================================================= */
 function updateSessionDashboard(){
   const ss = document.getElementById('session-state');
@@ -540,6 +582,7 @@ function updateSessionDashboard(){
     document.getElementById('expected-count').textContent='0.00';
     document.getElementById('diff-count').textContent='±0.00';
     document.getElementById('diff-count').className='stat-val';
+    document.getElementById('stock-loss').textContent='0.00';
     ['miss-count','one-count','two-count','btn-miss','btn-one','btn-two'].forEach(id=>document.getElementById(id).textContent='0');
     updateEnergyDisplay(); return;
   }
@@ -547,15 +590,27 @@ function updateSessionDashboard(){
   const now=Date.now();
   const elapsedH=(now-session.startTime)/3600000;
   const hourly = parseFloat(document.getElementById('hourly-exp').textContent);
-  const expected = elapsedH*hourly;
+  const rawExpected = elapsedH*hourly;
+  const pk = POKEMON[session.pokemon];
+  let pendingLoss = 0;
+  if(session.lastTapTime){
+    const gapH = (now - session.lastTapTime)/3600000;
+    if(gapH >= GAP_THRESHOLD_HOURS){
+      pendingLoss = calcStockLoss(gapH, hourly, pk.stockCap);
+    }
+  }
+  const totalLoss = session.stockLosses + pendingLoss;
+  const effectiveExpected = chk('stock-correction') ? Math.max(0, rawExpected - totalLoss) : rawExpected;
+
   const miss = session.events.filter(e=>e.type==='miss').length;
   const one  = session.events.filter(e=>e.type==='one').length;
   const two  = session.events.filter(e=>e.type==='two').length;
   const procs= one+two*2;
-  const diff = procs - expected;
+  const diff = procs - effectiveExpected;
 
   document.getElementById('elapsed-time').textContent = elapsedH.toFixed(1)+'h';
-  document.getElementById('expected-count').textContent = expected.toFixed(2);
+  document.getElementById('expected-count').textContent = effectiveExpected.toFixed(2);
+  document.getElementById('stock-loss').textContent = totalLoss.toFixed(2);
   document.getElementById('miss-count').textContent = miss;
   document.getElementById('one-count').textContent = one;
   document.getElementById('two-count').textContent = two;
@@ -569,9 +624,7 @@ function updateSessionDashboard(){
   updateEnergyDisplay();
 }
 
-/* =========================================================
-   げんき
-========================================================= */
+/* げんき */
 function getLiveEnergy(){
   if(!energyState.lastUpdate) return energyState.baseVal;
   const el = (Date.now()-energyState.lastUpdate)/60000;
@@ -605,9 +658,7 @@ function updateEnergyDisplay(){
   }
 }
 
-/* =========================================================
-   ログ表示
-========================================================= */
+/* ログ */
 function addLog(text){
   const ul=document.getElementById('log-list');
   const li=document.createElement('li'); li.textContent=text;
@@ -616,8 +667,7 @@ function addLog(text){
 function renderTodayLog(){
   const ul=document.getElementById('log-list'); ul.innerHTML='';
   if(!session) return;
-  const items = [];
-  items.push(`▶ 開始 ${fmtTime(session.startTime)} (${POKEMON[session.pokemon].name})`);
+  const items = [`▶ 開始 ${fmtTime(session.startTime)} (${POKEMON[session.pokemon].name})`];
   session.events.forEach(e=>{
     const lbl = e.type==='miss'?'不発':(e.type==='one'?'1回発動':'2回発動');
     items.push(`${fmtTime(e.time)} ${lbl}`);
@@ -625,9 +675,7 @@ function renderTodayLog(){
   items.reverse().forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); });
 }
 
-/* =========================================================
-   週次ログ
-========================================================= */
+/* 週次 */
 function renderWeekly(){
   const container=document.getElementById('weekly-container');
   container.innerHTML='';
@@ -642,60 +690,81 @@ function renderWeekly(){
   Object.keys(groups).sort().reverse().forEach(k=>{
     const g=groups[k];
     const div=document.createElement('div'); div.className='weekly-block';
-    let sumProcs=0, sumExp=0, sumHours=0;
+    let sumProcs=0, sumExp=0, sumHours=0, sumLoss=0;
     const lines = g.entries.sort((a,b)=>a.startTime-b.startTime).map(e=>{
-      sumProcs+=e.procs; sumExp+=e.expected; sumHours+=e.elapsedH;
+      sumProcs+=e.procs; sumExp+=e.expected; sumHours+=e.elapsedH; sumLoss+=(e.stockLoss||0);
       const arrow = e.diff>=0?`⬆+${e.diff}`:`⬇${e.diff}`;
-      return `${todayJPHeader(e.startTime)}(${e.pokemon}) 計測${e.elapsedH}h 実発動${e.procs}回 期待${e.expected} ${arrow} [不発${e.miss}/1回${e.one}/2回${e.two}]`;
+      return `${todayJPHeader(e.startTime)}(${e.pokemon}) ${e.elapsedH}h 実${e.procs} 期${e.expected} ロス${e.stockLoss||0} ${arrow} [不${e.miss}/1${e.one}/2${e.two}]`;
     });
     const weekDiff = (sumProcs-sumExp).toFixed(2);
-    div.innerHTML = `<h4>${todayJPHeader(g.weekStart)}週 の記録</h4>`+
+    div.innerHTML = `<h4>${todayJPHeader(g.weekStart)}週</h4>`+
       lines.map(l=>`<div>・${l}</div>`).join('')+
-      `<div style="margin-top:4px;font-weight:bold;">週合計: ${sumHours.toFixed(1)}h / 実${sumProcs}回 / 期待${sumExp.toFixed(2)} / ${weekDiff>=0?'+':''}${weekDiff}</div>`;
+      `<div style="margin-top:4px;font-weight:bold;">週合計: ${sumHours.toFixed(1)}h / 実${sumProcs} / 期待${sumExp.toFixed(2)} / ロス${sumLoss.toFixed(2)} / ${weekDiff>=0?'+':''}${weekDiff}</div>`;
     container.appendChild(div);
   });
 }
 
 /* =========================================================
-   エクスポート / インポート
+   エクスポート/インポート
 ========================================================= */
-function exportData(){
-  const payload = { version:8, exportedAt: new Date().toISOString(), dailyLogs, config:JSON.parse(localStorage.getItem(K_CFG)||'{}') };
-  document.getElementById('import-area').value = JSON.stringify(payload,null,2);
+function buildPayload(){
+  return { version:10, exportedAt: new Date().toISOString(),
+    dailyLogs, session,
+    config: JSON.parse(localStorage.getItem(K_CFG)||'{}') };
+}
+
+function exportText(){
+  document.getElementById('import-area').value = JSON.stringify(buildPayload(),null,2);
   alert('テキスト欄に書き出しました。全選択してコピーして保管してください。');
 }
-function importData(){
+function importText(){
   const raw = document.getElementById('import-area').value.trim();
   if(!raw){ alert('テキストがありません'); return; }
+  applyPayload(raw);
+}
+function exportFile(){
+  const data = JSON.stringify(buildPayload(),null,2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+  a.href = url; a.download = `pokesuri-backup-${ts}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function importFile(ev){
+  const f = ev.target.files[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = e => applyPayload(e.target.result);
+  reader.readAsText(f);
+}
+function applyPayload(raw){
   try{
     const obj = JSON.parse(raw);
     if(!obj.dailyLogs){ alert('形式が違います'); return; }
     if(!confirm('現在のログを上書きして復元しますか？')) return;
     dailyLogs = obj.dailyLogs;
     saveLogs();
+    if(obj.session){ session = obj.session; saveSession(); }
     if(obj.config){ localStorage.setItem(K_CFG, JSON.stringify(obj.config)); loadConfig(); onPokemonChange(true); updateCalculations(); }
-    renderWeekly();
+    renderAll();
     alert('復元しました');
   }catch(e){ alert('JSONの解析に失敗しました: '+e.message); }
 }
 function clearAllData(){
-  if(!confirm('本当に全データを削除しますか？（設定・セッション・週次ログすべて）')) return;
-  if(!confirm('本当に本当によろしいですか？取り消せません。')) return;
+  if(!confirm('全データを削除しますか？')) return;
+  if(!confirm('本当によろしいですか？取り消せません。')) return;
   [K_CFG,K_SESS,K_LOGS,K_ENERGY].forEach(k=>localStorage.removeItem(k));
   location.reload();
 }
 
-/* =========================================================
-   タイマーループ
-========================================================= */
+/* タイマー */
 function startTimerLoop(){
   if(timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(()=>{ updateSessionDashboard(); }, 5000);
 }
 
-/* =========================================================
-   最初の描画
-========================================================= */
+/* 初期描画 */
 function renderAll(){
   renderTodayLog();
   renderWeekly();
