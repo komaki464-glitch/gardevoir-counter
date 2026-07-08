@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ポケスリ スキル＆げんきカウンター V10</title>
+<title>ポケスリ スキル＆げんきカウンター V11</title>
 <style>
   :root{--primary:#68d391;--bg:#f7fafc;--card:#fff;--txt:#2d3748;--accent:#2b6cb0;}
   *{box-sizing:border-box;}
@@ -38,6 +38,7 @@
   .util-btns button{padding:8px;border:1px solid #cbd5e0;background:#fff;border-radius:6px;font-size:.78rem;cursor:pointer;}
   .util-btns button.danger{color:#c53030;border-color:#feb2b2;}
   .util-btns button.primary{background:#4299e1;color:#fff;border-color:#4299e1;}
+  .util-btns button.warn{background:#ed8936;color:#fff;border-color:#ed8936;}
   .log-list{max-height:170px;overflow-y:auto;font-size:.78rem;color:#4a5568;padding-left:20px;margin:0;}
   .weekly-block{background:#f7fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px;margin-bottom:8px;font-size:.78rem;}
   .weekly-block h4{margin:0 0 4px;font-size:.85rem;color:#2b6cb0;}
@@ -47,12 +48,15 @@
   .badge{display:inline-block;background:var(--accent);color:#fff;padding:1px 6px;border-radius:10px;font-size:.7rem;margin-left:4px;}
   details summary{cursor:pointer;font-weight:bold;font-size:.9rem;color:#4a5568;margin-bottom:6px;}
   .hint{font-size:.72rem;color:#718096;margin-top:4px;}
+  .config-log{background:#fef5e7;border:1px solid #f6ad55;border-radius:6px;padding:6px;margin-top:6px;font-size:.75rem;color:#7b341e;}
+  .config-log-item{padding:2px 0;border-top:1px dotted #f6ad55;}
+  .config-log-item:first-child{border-top:none;}
 </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>ポケスリ カウンター V10 <span id="pkm-badge" class="badge">サーナイト</span></h1>
+  <h1>ポケスリ カウンター V11 <span id="pkm-badge" class="badge">サーナイト</span></h1>
 
   <!-- ▼ ポケモン切替 -->
   <div class="section-title">ポケモン選択</div>
@@ -72,7 +76,7 @@
     </div>
   </div>
 
- <!-- ▼ 個体・環境設定 -->
+  <!-- ▼ 個体・環境設定 -->
   <div class="section-title">個体・環境設定</div>
   <div class="box">
     <details id="config-details">
@@ -206,6 +210,15 @@
       <button onclick="undoLast()">← 直前の1件を取消</button>
       <button class="danger" onclick="resetSession()">セッション破棄</button>
     </div>
+
+    <!-- ★ V11 追加: 環境変更を記録 -->
+    <div class="util-btns" style="margin-top:6px;">
+      <button class="warn" onclick="snapshotConfig(null)">⚙ 今の設定で環境変更を記録</button>
+      <button onclick="showManualConfigChange()">🕐 過去の時刻で記録</button>
+    </div>
+
+    <!-- 変更履歴表示 -->
+    <div id="config-log-container"></div>
   </div>
 
   <!-- ▼ げんき度 -->
@@ -246,6 +259,13 @@
         <button onclick="manualAddEvent()" style="font-size:.75rem;">追加</button>
       </div>
     </div>
+    <div class="row" id="manual-cfg-row" style="display:none;">
+      <label>環境変更を過去に:</label>
+      <div style="display:flex;gap:4px;">
+        <input type="time" id="manual-cfg-time">
+        <button onclick="applyManualConfigChange()" style="font-size:.75rem;">この設定で記録</button>
+      </div>
+    </div>
   </div>
 
   <!-- ▼ 今日のログ -->
@@ -284,7 +304,7 @@
 
 <script>
 /* =========================================================
-   V10: げんき81%以上維持前提の実速度補正 + ポアソンロス補正
+   V11: 時系列configスナップショット + ポアソン + げんき補正
 ========================================================= */
 const POKEMON = {
   gardevoir :{name:'サーナイト',basePeriod:2400,baseProb:0.042,ceiling:60,stockCap:2},
@@ -294,19 +314,16 @@ const POKEMON = {
   shuckle   :{name:'ツボツボ',  basePeriod:3600,baseProb:0.059,ceiling:78,stockCap:2},
 };
 const HEAL_TABLE = {1:5,2:7,3:9,4:11,5:15,6:18};
-const GAP_THRESHOLD_HOURS = 2;  // これ以上空いたらロス計算
-const GENKI_MULTIPLIER = 0.45;  // ★ V10: げんき81%以上維持前提の速度補正
+const GAP_THRESHOLD_HOURS = 2;
+const GENKI_MULTIPLIER = 0.45;
 
-/* ストレージキー（V10用に変更） */
-const K_CFG='skv10:config', K_SESS='skv10:session', K_LOGS='skv10:dailyLogs', K_ENERGY='skv10:energy';
+const K_CFG='skv11:config', K_SESS='skv11:session', K_LOGS='skv11:dailyLogs', K_ENERGY='skv11:energy';
 
-/* 状態 */
 let session = null;
 let dailyLogs = [];
 let energyState = {baseVal:100, lastUpdate:null};
 let timerInterval = null;
 
-/* 初期化 */
 window.addEventListener('load', ()=>{
   loadAll();
   updateCalculations();
@@ -315,11 +332,115 @@ window.addEventListener('load', ()=>{
 });
 
 /* =========================================================
-   ポアソン分布によるストック超過ロス計算
+   configスナップショット関連
+========================================================= */
+function captureCurrentConfig(){
+  return {
+    pokemon: val('pokemon'),
+    level: parseInt(val('pokemon-lvl'))||1,
+    nature: val('nature'),
+    probM: chk('sub-prob-m'), probS: chk('sub-prob-s'),
+    speedM: chk('sub-speed-m'), speedS: chk('sub-speed-s'),
+    otomo: parseInt(val('team-otomo')),
+    camp: chk('camp-ticket'),
+    exMinus: chk('ex-fav-minus'), exPlus: chk('ex-fav-plus'),
+    exBuff: chk('event-skill-buff'),
+  };
+}
+
+// スナップショットから1時間あたり期待値を計算
+function calcHourlyFromConfig(cfg){
+  const pk = POKEMON[cfg.pokemon];
+  const lvlBonus = 1 - (cfg.level-1)*0.002;
+  // 性格補正取得（selectの中を検索）
+  const natOpt = Array.from(document.getElementById('nature').options).find(o=>o.value===cfg.nature);
+  const nSpeed = natOpt ? parseFloat(natOpt.dataset.speed) : 0;
+  const nSkill = natOpt ? parseFloat(natOpt.dataset.skill) : 1;
+
+  let subSpeed = 0;
+  if(cfg.speedM) subSpeed -= 0.14;
+  if(cfg.speedS) subSpeed -= 0.07;
+  subSpeed -= cfg.otomo*0.05;
+  if(subSpeed < -0.35) subSpeed = -0.35;
+
+  let activePeriod = pk.basePeriod*(1+nSpeed)*(1+subSpeed)*lvlBonus;
+  activePeriod *= GENKI_MULTIPLIER;
+  if(cfg.camp) activePeriod /= 1.2;
+  if(cfg.exMinus) activePeriod *= 0.90;
+  else if(cfg.exPlus) activePeriod *= 1.10;
+
+  let subProb = 0;
+  if(cfg.probM) subProb += 0.36;
+  if(cfg.probS) subProb += 0.18;
+  let finalProb = pk.baseProb*(1+subProb)*nSkill;
+  if(cfg.exBuff) finalProb *= 1.25;
+
+  const ceilProb = Math.pow(1-finalProb, pk.ceiling);
+  const effectiveProb = finalProb / (1 - ceilProb);
+  return (3600/activePeriod)*effectiveProb;
+}
+
+// セッションのconfigChangesを使って、期間ごとに期待値を積算
+function calcSessionExpected(untilTime){
+  if(!session || !session.configChanges || session.configChanges.length===0){
+    // configChangesが無い場合は今の設定で全期間計算（後方互換）
+    const hourly = parseFloat(document.getElementById('hourly-exp').textContent);
+    return ((untilTime - session.startTime)/3600000) * hourly;
+  }
+  const changes = [...session.configChanges].sort((a,b)=>a.time-b.time);
+  let total = 0;
+  for(let i=0;i<changes.length;i++){
+    const cfg = changes[i];
+    const start = cfg.time;
+    const end = (i+1<changes.length) ? Math.min(changes[i+1].time, untilTime) : untilTime;
+    if(end<=start) continue;
+    const hours = (end - start)/3600000;
+    total += hours * calcHourlyFromConfig(cfg);
+  }
+  return total;
+}
+
+// セッションのconfigChangesを使って、期間ごとにストックロスを積算
+function calcSessionStockLossTotal(untilTime){
+  if(!session) return 0;
+  const changes = (session.configChanges && session.configChanges.length>0) ? [...session.configChanges].sort((a,b)=>a.time-b.time) : null;
+  const events = [...session.events].sort((a,b)=>a.time-b.time);
+  let tapPoints = [session.startTime, ...events.map(e=>e.time), untilTime];
+  let loss = 0;
+  for(let i=0;i<tapPoints.length-1;i++){
+    const t0 = tapPoints[i], t1 = tapPoints[i+1];
+    const gapH = (t1-t0)/3600000;
+    if(gapH < GAP_THRESHOLD_HOURS) continue;
+    // このギャップ中の平均hourly（configChangesで加重平均）
+    let hourly;
+    if(changes){
+      let sum=0, dur=0;
+      for(let j=0;j<changes.length;j++){
+        const cs = changes[j].time;
+        const ce = (j+1<changes.length) ? changes[j+1].time : Infinity;
+        const os = Math.max(t0, cs);
+        const oe = Math.min(t1, ce);
+        if(oe>os){
+          const h = (oe-os)/3600000;
+          sum += h * calcHourlyFromConfig(changes[j]);
+          dur += h;
+        }
+      }
+      hourly = dur>0 ? sum/dur : parseFloat(document.getElementById('hourly-exp').textContent);
+    } else {
+      hourly = parseFloat(document.getElementById('hourly-exp').textContent);
+    }
+    const pk = POKEMON[session.pokemon];
+    loss += calcStockLoss(gapH, hourly, pk.stockCap);
+  }
+  return loss;
+}
+
+/* =========================================================
+   ポアソン
 ========================================================= */
 function factorial(n){ let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
 function poisson(k, lam){ return Math.pow(lam,k) * Math.exp(-lam) / factorial(k); }
-
 function calcStockLoss(gapHours, hourlyExpected, stockCap){
   const lam = gapHours * hourlyExpected;
   if(lam < 0.01) return 0;
@@ -335,16 +456,9 @@ function calcStockLoss(gapHours, hourlyExpected, stockCap){
    ストレージ
 ========================================================= */
 function saveConfig(){
-  const cfg = {
-    pokemon:val('pokemon'), level:val('pokemon-lvl'), nature:val('nature'),
-    probM:chk('sub-prob-m'), probS:chk('sub-prob-s'),
-    speedM:chk('sub-speed-m'), speedS:chk('sub-speed-s'),
-    otomo:val('team-otomo'), skillLv:val('skill-lv'),
-    camp:chk('camp-ticket'),
-    exMinus:chk('ex-fav-minus'), exPlus:chk('ex-fav-plus'),
-    exBuff:chk('event-skill-buff'),
-    stockCorr:chk('stock-correction'),
-  };
+  const cfg = captureCurrentConfig();
+  cfg.skillLv = val('skill-lv');
+  cfg.stockCorr = chk('stock-correction');
   localStorage.setItem(K_CFG, JSON.stringify(cfg));
 }
 function loadConfig(){
@@ -396,44 +510,34 @@ function onPokemonChange(silent){
 }
 
 function updateCalculations(){
-  const pk = POKEMON[val('pokemon')];
-  const lvl = parseInt(val('pokemon-lvl'))||1;
-  const lvlBonus = 1 - (lvl-1)*0.002;
+  const cfg = captureCurrentConfig();
+  const pk = POKEMON[cfg.pokemon];
+
+  // 表示おてつだい時間
+  const lvlBonus = 1 - (cfg.level-1)*0.002;
   const natOpt = document.getElementById('nature').options[document.getElementById('nature').selectedIndex];
   const nSpeed = parseFloat(natOpt.dataset.speed);
   const nSkill = parseFloat(natOpt.dataset.skill);
-
   let subSpeed = 0;
-  if(chk('sub-speed-m')) subSpeed -= 0.14;
-  if(chk('sub-speed-s')) subSpeed -= 0.07;
-  subSpeed -= parseInt(val('team-otomo'))*0.05;
+  if(cfg.speedM) subSpeed -= 0.14;
+  if(cfg.speedS) subSpeed -= 0.07;
+  subSpeed -= cfg.otomo*0.05;
   if(subSpeed < -0.35) subSpeed = -0.35;
-
-  // 表示おてつだい時間（ゲーム内ステータス画面と一致）
   const gamePeriod = Math.floor(pk.basePeriod*(1+nSpeed)*(1+subSpeed)*lvlBonus);
   document.getElementById('calculated-period').textContent = `${Math.floor(gamePeriod/60)}分${gamePeriod%60}秒`;
 
-  // 実効お手伝い時間 = 表示時間 × げんき補正(0.45) × 各種フィールド補正
-  let activePeriod = pk.basePeriod*(1+nSpeed)*(1+subSpeed)*lvlBonus;
-  activePeriod *= GENKI_MULTIPLIER;  // ★ V10 追加: げんき81%以上維持前提
-  if(chk('camp-ticket')) activePeriod /= 1.2;
-  if(chk('ex-fav-minus')) activePeriod *= 0.90;
-  else if(chk('ex-fav-plus')) activePeriod *= 1.10;
-
-  // スキル確率
+  // スキル確率と天井考慮
   let subProb = 0;
-  if(chk('sub-prob-m')) subProb += 0.36;
-  if(chk('sub-prob-s')) subProb += 0.18;
+  if(cfg.probM) subProb += 0.36;
+  if(cfg.probS) subProb += 0.18;
   let finalProb = pk.baseProb*(1+subProb)*nSkill;
-  if(chk('event-skill-buff')) finalProb *= 1.25;
+  if(cfg.exBuff) finalProb *= 1.25;
   document.getElementById('calculated-prob').textContent = (finalProb*100).toFixed(2)+'%';
-
-  // 天井考慮
   const ceilProb = Math.pow(1-finalProb, pk.ceiling);
   const effectiveProb = finalProb / (1 - ceilProb);
   document.getElementById('ceiling-prob').textContent = (effectiveProb*100).toFixed(2)+'%';
 
-  const hourly = (3600/activePeriod)*effectiveProb;
+  const hourly = calcHourlyFromConfig(cfg);
   document.getElementById('hourly-exp').textContent = hourly.toFixed(5);
 
   updateSessionDashboard();
@@ -447,11 +551,19 @@ function startSession(){
     if(!confirm('現在のセッションを破棄して開始しますか？')) return;
   }
   const now = Date.now();
-  session = { pokemon: val('pokemon'), startTime: now, events: [], stockLosses:0, lastTapTime: now };
+  const cfg = captureCurrentConfig();
+  session = {
+    pokemon: cfg.pokemon,
+    startTime: now,
+    events: [],
+    configChanges: [{...cfg, time: now}],
+    lastTapTime: now,
+  };
   energyState = { baseVal:100, lastUpdate: now };
   saveSession(); saveEnergy();
-  addLog(`▶ 計測開始 (${fmtTime(now)}, ${POKEMON[session.pokemon].name})`);
+  addLog(`▶ 計測開始 (${fmtTime(now)}, ${POKEMON[session.pokemon].name}) おてボ${cfg.otomo}枚`);
   updateSessionDashboard();
+  renderConfigLog();
 }
 
 function manualStart(){
@@ -459,29 +571,96 @@ function manualStart(){
   const [h,m] = t.split(':').map(Number);
   const d = new Date(); d.setHours(h,m,0,0);
   if(d > new Date()) d.setDate(d.getDate()-1);
-  session = { pokemon: val('pokemon'), startTime: d.getTime(), events: [], stockLosses:0, lastTapTime: d.getTime() };
+  const cfg = captureCurrentConfig();
+  session = {
+    pokemon: cfg.pokemon,
+    startTime: d.getTime(),
+    events: [],
+    configChanges: [{...cfg, time: d.getTime()}],
+    lastTapTime: d.getTime(),
+  };
   energyState = { baseVal:100, lastUpdate:d.getTime() };
   saveSession(); saveEnergy();
-  addLog(`▶ 手動開始 (${fmtTime(d)}, ${POKEMON[session.pokemon].name})`);
+  addLog(`▶ 手動開始 (${fmtTime(d)}, ${POKEMON[session.pokemon].name}) おてボ${cfg.otomo}枚`);
   updateSessionDashboard();
+  renderConfigLog();
 }
 
-function accumulateStockLoss(tapTime){
-  if(!session.lastTapTime) { session.lastTapTime = tapTime; return 0; }
-  const gapH = (tapTime - session.lastTapTime) / 3600000;
-  if(gapH < GAP_THRESHOLD_HOURS){ session.lastTapTime = tapTime; return 0; }
-  const hourly = parseFloat(document.getElementById('hourly-exp').textContent);
-  const pk = POKEMON[session.pokemon];
-  const loss = calcStockLoss(gapH, hourly, pk.stockCap);
-  session.stockLosses += loss;
-  session.lastTapTime = tapTime;
-  return loss;
+// 環境変更を記録（timeにnullを渡すと現在時刻）
+function snapshotConfig(atTime){
+  if(!session){ alert('先に計測を開始してください'); return; }
+  const time = atTime || Date.now();
+  const cfg = captureCurrentConfig();
+  // ポケモン変更は別セッション扱いにしないと複雑なので、警告のみ
+  if(cfg.pokemon !== session.pokemon){
+    if(!confirm(`⚠️ ポケモンが変わっています（${POKEMON[session.pokemon].name}→${POKEMON[cfg.pokemon].name}）。それでも記録しますか？`)) return;
+  }
+  session.configChanges.push({...cfg, time});
+  session.configChanges.sort((a,b)=>a.time-b.time);
+  saveSession();
+  const prev = session.configChanges[session.configChanges.length-2];
+  const diff = describeConfigDiff(prev, cfg);
+  addLog(`⚙ ${fmtTime(time)} 環境変更: ${diff}`);
+  updateSessionDashboard();
+  renderConfigLog();
+}
+
+function describeConfigDiff(prev, cur){
+  const diffs = [];
+  if(!prev) return 'なし';
+  if(prev.otomo !== cur.otomo) diffs.push(`おてボ${prev.otomo}→${cur.otomo}枚`);
+  if(prev.camp !== cur.camp) diffs.push(`キャンプ${cur.camp?'ON':'OFF'}`);
+  if(prev.exMinus !== cur.exMinus) diffs.push(`EX-10%${cur.exMinus?'ON':'OFF'}`);
+  if(prev.exPlus !== cur.exPlus) diffs.push(`EX+10%${cur.exPlus?'ON':'OFF'}`);
+  if(prev.exBuff !== cur.exBuff) diffs.push(`EXバフ${cur.exBuff?'ON':'OFF'}`);
+  if(prev.probM !== cur.probM) diffs.push(`確率M${cur.probM?'ON':'OFF'}`);
+  if(prev.probS !== cur.probS) diffs.push(`確率S${cur.probS?'ON':'OFF'}`);
+  if(prev.speedM !== cur.speedM) diffs.push(`スピM${cur.speedM?'ON':'OFF'}`);
+  if(prev.speedS !== cur.speedS) diffs.push(`スピS${cur.speedS?'ON':'OFF'}`);
+  if(prev.nature !== cur.nature) diffs.push(`性格→${cur.nature}`);
+  if(prev.level !== cur.level) diffs.push(`Lv→${cur.level}`);
+  return diffs.length>0 ? diffs.join(', ') : '変更なし（同じ設定）';
+}
+
+function showManualConfigChange(){
+  if(!session){ alert('先に計測を開始してください'); return; }
+  document.getElementById('manual-cfg-row').style.display = 'flex';
+  document.getElementById('manual-cfg-time').focus();
+}
+
+function applyManualConfigChange(){
+  if(!session){ alert('先に計測を開始してください'); return; }
+  const t = val('manual-cfg-time'); if(!t){ alert('時刻を選んでください'); return; }
+  const [h,m] = t.split(':').map(Number);
+  const d = new Date(session.startTime);
+  d.setHours(h,m,0,0);
+  if(d < new Date(session.startTime)) d.setDate(d.getDate()+1);
+  snapshotConfig(d.getTime());
+  document.getElementById('manual-cfg-row').style.display = 'none';
+}
+
+function renderConfigLog(){
+  const c = document.getElementById('config-log-container');
+  c.innerHTML = '';
+  if(!session || !session.configChanges || session.configChanges.length===0){ return; }
+  const div = document.createElement('div');
+  div.className = 'config-log';
+  div.innerHTML = '<b>⚙ 環境変更履歴</b>';
+  session.configChanges.forEach((cfg,i)=>{
+    const prev = i>0 ? session.configChanges[i-1] : null;
+    const label = i===0 ? '開始時' : describeConfigDiff(prev, cfg);
+    const hourly = calcHourlyFromConfig(cfg);
+    const item = document.createElement('div');
+    item.className = 'config-log-item';
+    item.innerHTML = `${fmtTime(cfg.time)} ${label} <span style="color:#718096;">(期待値 ${hourly.toFixed(3)}/h, おてボ${cfg.otomo}枚)</span>`;
+    div.appendChild(item);
+  });
+  c.appendChild(div);
 }
 
 function recordEvent(type){
   if(!session){ alert('先に「計測開始」を押してください'); return; }
   const now = Date.now();
-  const gainedLoss = accumulateStockLoss(now);
   const before = getLiveEnergy();
   session.events.push({ time: now, type });
   if(type!=='miss'){
@@ -489,11 +668,10 @@ function recordEvent(type){
     energyState.baseVal = Math.min(150, before + heal);
     energyState.lastUpdate = now;
   }
+  session.lastTapTime = now;
   saveSession(); saveEnergy();
   const lbl = type==='miss'?'不発':(type==='one'?'1回発動':'2回発動');
-  let msg = `${fmtTime(now)} ${lbl} (げんき ${Math.floor(before)}% → ${Math.floor(getLiveEnergy())}%)`;
-  if(gainedLoss > 0.1) msg += ` [推定ロス+${gainedLoss.toFixed(2)}]`;
-  addLog(msg);
+  addLog(`${fmtTime(now)} ${lbl} (げんき ${Math.floor(before)}% → ${Math.floor(getLiveEnergy())}%)`);
   updateSessionDashboard();
 }
 
@@ -505,12 +683,11 @@ function manualAddEvent(){
   const d = new Date(session.startTime);
   d.setHours(h,m,0,0);
   if(d < new Date(session.startTime)) d.setDate(d.getDate()+1);
-  const gainedLoss = accumulateStockLoss(d.getTime());
   session.events.push({ time: d.getTime(), type: ty });
   session.events.sort((a,b)=>a.time-b.time);
   saveSession();
   const lbl = ty==='miss'?'不発':(ty==='one'?'1回発動':'2回発動');
-  addLog(`⤵ 手動追加 ${fmtTime(d)} ${lbl}${gainedLoss>0.1?` [推定ロス+${gainedLoss.toFixed(2)}]`:''}`);
+  addLog(`⤵ 手動追加 ${fmtTime(d)} ${lbl}`);
   updateSessionDashboard();
 }
 
@@ -526,22 +703,21 @@ function resetSession(){
   if(!confirm('セッションを破棄します。よろしいですか？')) return;
   session = null; saveSession();
   document.getElementById('log-list').innerHTML='';
+  document.getElementById('config-log-container').innerHTML='';
   updateSessionDashboard();
 }
 
 function endDay(){
   if(!session){ alert('セッションが未開始です'); return; }
   const endT = Date.now();
-  accumulateStockLoss(endT);
   const elapsedH = (endT - session.startTime)/3600000;
   const miss = session.events.filter(e=>e.type==='miss').length;
   const one  = session.events.filter(e=>e.type==='one').length;
   const two  = session.events.filter(e=>e.type==='two').length;
   const procs = one + two*2;
-  const hourly = parseFloat(document.getElementById('hourly-exp').textContent);
-  const rawExpected = elapsedH * hourly;
-  const stockLoss = chk('stock-correction') ? session.stockLosses : 0;
-  const expected = Math.max(0, rawExpected - stockLoss);
+  const rawExpected = calcSessionExpected(endT);
+  const totalLoss = calcSessionStockLossTotal(endT);
+  const expected = chk('stock-correction') ? Math.max(0, rawExpected - totalLoss) : rawExpected;
   const diff = procs - expected;
 
   const entry = {
@@ -552,9 +728,10 @@ function endDay(){
     elapsedH: Number(elapsedH.toFixed(2)),
     miss, one, two, procs,
     rawExpected: Number(rawExpected.toFixed(2)),
-    stockLoss: Number(session.stockLosses.toFixed(2)),
+    stockLoss: Number(totalLoss.toFixed(2)),
     expected: Number(expected.toFixed(2)),
     diff: Number(diff.toFixed(2)),
+    configChanges: session.configChanges,
   };
   dailyLogs.push(entry);
   saveLogs();
@@ -571,13 +748,11 @@ function endDay(){
     `${diff>=0?'⬆ 上振れ +':'⬇ 下振れ '}${entry.diff}`);
 
   document.getElementById('log-list').innerHTML='';
+  document.getElementById('config-log-container').innerHTML='';
   updateSessionDashboard();
   renderWeekly();
 }
 
-/* =========================================================
-   ダッシュボード
-========================================================= */
 function updateSessionDashboard(){
   const ss = document.getElementById('session-state');
   const st = document.getElementById('session-start');
@@ -594,17 +769,8 @@ function updateSessionDashboard(){
   ss.textContent = '計測中'; st.textContent = fmtTime(session.startTime);
   const now=Date.now();
   const elapsedH=(now-session.startTime)/3600000;
-  const hourly = parseFloat(document.getElementById('hourly-exp').textContent);
-  const rawExpected = elapsedH*hourly;
-  const pk = POKEMON[session.pokemon];
-  let pendingLoss = 0;
-  if(session.lastTapTime){
-    const gapH = (now - session.lastTapTime)/3600000;
-    if(gapH >= GAP_THRESHOLD_HOURS){
-      pendingLoss = calcStockLoss(gapH, hourly, pk.stockCap);
-    }
-  }
-  const totalLoss = session.stockLosses + pendingLoss;
+  const rawExpected = calcSessionExpected(now);
+  const totalLoss = calcSessionStockLossTotal(now);
   const effectiveExpected = chk('stock-correction') ? Math.max(0, rawExpected - totalLoss) : rawExpected;
 
   const miss = session.events.filter(e=>e.type==='miss').length;
@@ -673,10 +839,14 @@ function renderTodayLog(){
   const ul=document.getElementById('log-list'); ul.innerHTML='';
   if(!session) return;
   const items = [`▶ 開始 ${fmtTime(session.startTime)} (${POKEMON[session.pokemon].name})`];
-  session.events.forEach(e=>{
-    const lbl = e.type==='miss'?'不発':(e.type==='one'?'1回発動':'2回発動');
-    items.push(`${fmtTime(e.time)} ${lbl}`);
-  });
+  const merged = [
+    ...session.events.map(e=>({time:e.time, text:`${fmtTime(e.time)} ${e.type==='miss'?'不発':(e.type==='one'?'1回発動':'2回発動')}`})),
+    ...(session.configChanges||[]).slice(1).map((c,i)=>{
+      const prev = session.configChanges[i];
+      return {time:c.time, text:`⚙ ${fmtTime(c.time)} 環境変更: ${describeConfigDiff(prev,c)}`};
+    })
+  ].sort((a,b)=>a.time-b.time);
+  merged.forEach(m=>items.push(m.text));
   items.reverse().forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); });
 }
 
@@ -709,18 +879,15 @@ function renderWeekly(){
   });
 }
 
-/* =========================================================
-   エクスポート/インポート
-========================================================= */
+/* エクスポート/インポート */
 function buildPayload(){
-  return { version:10, exportedAt: new Date().toISOString(),
+  return { version:11, exportedAt: new Date().toISOString(),
     dailyLogs, session,
     config: JSON.parse(localStorage.getItem(K_CFG)||'{}') };
 }
-
 function exportText(){
   document.getElementById('import-area').value = JSON.stringify(buildPayload(),null,2);
-  alert('テキスト欄に書き出しました。全選択してコピーして保管してください。');
+  alert('テキスト欄に書き出しました。');
 }
 function importText(){
   const raw = document.getElementById('import-area').value.trim();
@@ -773,6 +940,7 @@ function startTimerLoop(){
 function renderAll(){
   renderTodayLog();
   renderWeekly();
+  renderConfigLog();
   updateSessionDashboard();
 }
 </script>
