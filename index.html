@@ -1,15 +1,13 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ポケスリ スキル＆げんきカウンター V11</title>
+<title>ポケスリ スキル＆げんきカウンター V12</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#68d391">
 <style>
-
   :root{--primary:#68d391;--bg:#f7fafc;--card:#fff;--txt:#2d3748;--accent:#2b6cb0;}
   *{box-sizing:border-box;}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--txt);margin:0;padding:12px;display:flex;flex-direction:column;align-items:center;}
@@ -27,41 +25,54 @@
   .stat.hl{background:#ebf8ff;border-color:#bee3f8;}
   .stat.energy{background:#fffaf0;border-color:#feebc8;}
   .stat.loss{background:#fff5f5;border-color:#fed7d7;}
+  .stat.pause{background:#f0fff4;border-color:#9ae6b4;}
   .stat-val{font-size:1.25rem;font-weight:bold;margin-top:4px;}
   .stat-val.plus{color:#38a169;}
   .stat-val.minus{color:#e53e3e;}
   .stat-val.energy{color:#dd6b20;}
   .stat-val.loss{color:#c53030;}
+  .stat-val.pause{color:#276749;}
   .btn-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;}
-  .btn{border:none;border-radius:10px;padding:14px 4px;font-size:.9rem;font-weight:bold;cursor:pointer;color:#fff;box-shadow:0 3px 8px rgba(0,0,0,.12);}
+  .btn{border:none;border-radius:10px;padding:14px 4px;font-size:.9rem;font-weight:bold;cursor:pointer;color:#fff;box-shadow:0 3px 8px rgba(0,0,0,.12);transition:opacity .2s;}
   .btn:active{transform:scale(.97);}
+  .btn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none;}
   .btn.miss{background:#a0aec0;}
   .btn.one{background:var(--primary);}
   .btn.two{background:#4299e1;}
   .btn .count{font-size:.7rem;font-weight:normal;display:block;margin-top:4px;opacity:.9;}
   .util-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
   .util-btns button{padding:8px;border:1px solid #cbd5e0;background:#fff;border-radius:6px;font-size:.78rem;cursor:pointer;}
+  .util-btns button:disabled{opacity:.4;cursor:not-allowed;}
   .util-btns button.danger{color:#c53030;border-color:#feb2b2;}
   .util-btns button.primary{background:#4299e1;color:#fff;border-color:#4299e1;}
   .util-btns button.warn{background:#ed8936;color:#fff;border-color:#ed8936;}
+  .util-btns button.pause{background:#48bb78;color:#fff;border-color:#48bb78;}
+  .util-btns button.resume{background:#ecc94b;color:#744210;border-color:#ecc94b;}
   .log-list{max-height:170px;overflow-y:auto;font-size:.78rem;color:#4a5568;padding-left:20px;margin:0;}
   .weekly-block{background:#f7fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px;margin-bottom:8px;font-size:.78rem;}
   .weekly-block h4{margin:0 0 4px;font-size:.85rem;color:#2b6cb0;}
+  .month-block{margin-bottom:12px;border:1px solid #cbd5e0;border-radius:8px;padding:8px;}
+  .month-block summary{cursor:pointer;font-weight:bold;font-size:.95rem;color:#2b6cb0;padding:4px 6px;}
+  .month-block[open] summary{margin-bottom:8px;}
   textarea{width:100%;height:110px;font-family:monospace;font-size:.75rem;padding:6px;border:1px solid #cbd5e0;border-radius:6px;}
   .status-line{border-top:1px dashed #cbd5e0;padding-top:8px;margin-top:8px;font-size:.85rem;}
   .status-line .kv{display:flex;gap:16px;white-space:nowrap;overflow-x:auto;}
   .badge{display:inline-block;background:var(--accent);color:#fff;padding:1px 6px;border-radius:10px;font-size:.7rem;margin-left:4px;}
+  .badge.paused{background:#ecc94b;color:#744210;}
   details summary{cursor:pointer;font-weight:bold;font-size:.9rem;color:#4a5568;margin-bottom:6px;}
   .hint{font-size:.72rem;color:#718096;margin-top:4px;}
   .config-log{background:#fef5e7;border:1px solid #f6ad55;border-radius:6px;padding:6px;margin-top:6px;font-size:.75rem;color:#7b341e;}
   .config-log-item{padding:2px 0;border-top:1px dotted #f6ad55;}
   .config-log-item:first-child{border-top:none;}
+  .pause-log{background:#f0fff4;border:1px solid #48bb78;border-radius:6px;padding:6px;margin-top:6px;font-size:.75rem;color:#22543d;}
+  .pause-log-item{padding:2px 0;border-top:1px dotted #48bb78;}
+  .pause-log-item:first-child{border-top:none;}
 </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>ポケスリ カウンター V11 <span id="pkm-badge" class="badge">サーナイト</span></h1>
+  <h1>ポケスリ カウンター V12 <span id="pkm-badge" class="badge">サーナイト</span><span id="pause-badge" class="badge paused" style="display:none;">⏸ 離脱中</span></h1>
 
   <!-- ▼ ポケモン切替 -->
   <div class="section-title">ポケモン選択</div>
@@ -192,38 +203,45 @@
       <span>開始: <b id="session-start">--:--</b></span>
     </div>
     <div class="stat-grid" style="margin-top:8px;">
-      <div class="stat"><div>経過時間</div><div class="stat-val" id="elapsed-time">0.0h</div></div>
+      <div class="stat"><div>実効稼働時間</div><div class="stat-val" id="elapsed-time">0.0h</div></div>
       <div class="stat"><div>実効期待値</div><div class="stat-val" id="expected-count">0.00</div></div>
       <div class="stat full hl"><div>期待値との差分</div><div class="stat-val" id="diff-count">±0.00</div></div>
       <div class="stat"><div>不発</div><div class="stat-val" id="miss-count" style="color:#718096;">0</div></div>
       <div class="stat"><div>1回発動</div><div class="stat-val" id="one-count" style="color:#38a169;">0</div></div>
       <div class="stat"><div>2回発動</div><div class="stat-val" id="two-count" style="color:#4299e1;">0</div></div>
-      <div class="stat full loss"><div>推定ロス（ストック超過）</div><div class="stat-val loss" id="stock-loss">0.00</div></div>
+      <div class="stat loss"><div>推定ロス</div><div class="stat-val loss" id="stock-loss">0.00</div></div>
+      <div class="stat pause"><div>累計離脱時間</div><div class="stat-val pause" id="pause-time">0.0h</div></div>
     </div>
 
     <div class="btn-row">
-      <button class="btn miss" onclick="recordEvent('miss')">不発<span class="count" id="btn-miss">0</span></button>
-      <button class="btn one" onclick="recordEvent('one')">1回発動<span class="count" id="btn-one">0</span></button>
-      <button class="btn two" onclick="recordEvent('two')">2回発動<span class="count" id="btn-two">0</span></button>
+      <button class="btn miss" id="btn-miss-el" onclick="recordEvent('miss')" disabled>不発<span class="count" id="btn-miss">0</span></button>
+      <button class="btn one" id="btn-one-el" onclick="recordEvent('one')" disabled>1回発動<span class="count" id="btn-one">0</span></button>
+      <button class="btn two" id="btn-two-el" onclick="recordEvent('two')" disabled>2回発動<span class="count" id="btn-two">0</span></button>
     </div>
 
     <div class="util-btns">
       <button onclick="startSession()">▶ 計測開始</button>
-      <button class="primary" onclick="endDay()">■ 一日の計測終了</button>
+      <button class="primary" onclick="endDay()" id="btn-endday">■ 一日の計測終了</button>
     </div>
     <div class="util-btns">
-      <button onclick="undoLast()">← 直前の1件を取消</button>
-      <button class="danger" onclick="resetSession()">セッション破棄</button>
+      <button onclick="undoLast()" id="btn-undo">← 直前の1件を取消</button>
+      <button class="danger" onclick="resetSession()" id="btn-reset">セッション破棄</button>
     </div>
 
-    <!-- ★ V11 追加: 環境変更を記録 -->
+    <!-- ★ V12 追加: パーティー離脱 -->
     <div class="util-btns" style="margin-top:6px;">
-      <button class="warn" onclick="snapshotConfig(null)">⚙ 今の設定で環境変更を記録</button>
-      <button onclick="showManualConfigChange()">🕐 過去の時刻で記録</button>
+      <button class="pause" id="btn-pause" onclick="togglePause(null)">⏸ パーティー離脱</button>
+      <button onclick="showManualPause()" id="btn-pause-manual">🕐 過去時刻で離脱/復帰</button>
     </div>
 
-    <!-- 変更履歴表示 -->
+    <!-- V11 環境変更 -->
+    <div class="util-btns" style="margin-top:6px;">
+      <button class="warn" onclick="snapshotConfig(null)" id="btn-cfg-change">⚙ 今の設定で環境変更を記録</button>
+      <button onclick="showManualConfigChange()" id="btn-cfg-manual">🕐 過去の時刻で記録</button>
+    </div>
+
     <div id="config-log-container"></div>
+    <div id="pause-log-container"></div>
   </div>
 
   <!-- ▼ げんき度 -->
@@ -271,6 +289,14 @@
         <button onclick="applyManualConfigChange()" style="font-size:.75rem;">この設定で記録</button>
       </div>
     </div>
+    <div class="row" id="manual-pause-row" style="display:none;">
+      <label>離脱区間を過去に:</label>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;">
+        <input type="time" id="manual-pause-start" placeholder="開始">
+        <input type="time" id="manual-pause-end" placeholder="復帰">
+        <button onclick="applyManualPause()" style="font-size:.75rem;">追加</button>
+      </div>
+    </div>
   </div>
 
   <!-- ▼ 今日のログ -->
@@ -280,10 +306,10 @@
 
 <!-- ▼ 週次ログ・データ管理 -->
 <div class="container">
-  <div class="section-title">週次ログ（過去の記録）</div>
-  <div id="weekly-container"></div>
+  <div class="section-title">月次 → 週次ログ（過去の記録）</div>
+  <div id="monthly-container"></div>
 
-  <details style="margin-top:12px;" open>
+  <details style="margin-top:12px;">
     <summary>データ管理（バックアップ / 復元 / 別ブラウザ移行）</summary>
     <div style="margin-top:8px;">
       <p class="hint">💾 <b>ファイル書き出し/読み込み</b>（別ブラウザや機種変で使用）</p>
@@ -309,7 +335,7 @@
 
 <script>
 /* =========================================================
-   V11: 時系列configスナップショット + ポアソン + げんき補正
+   V12: 月折りたたみ + パーティー離脱/復帰 + ボタングレーアウト
 ========================================================= */
 const POKEMON = {
   gardevoir :{name:'サーナイト',basePeriod:2400,baseProb:0.042,ceiling:60,stockCap:2},
@@ -322,6 +348,7 @@ const HEAL_TABLE = {1:5,2:7,3:9,4:11,5:15,6:18};
 const GAP_THRESHOLD_HOURS = 2;
 const GENKI_MULTIPLIER = 0.45;
 
+/* V11のキーをそのまま流用 → 既存データ完全引き継ぎ */
 const K_CFG='skv11:config', K_SESS='skv11:session', K_LOGS='skv11:dailyLogs', K_ENERGY='skv11:energy';
 
 let session = null;
@@ -331,10 +358,47 @@ let timerInterval = null;
 
 window.addEventListener('load', ()=>{
   loadAll();
+  migrateSession();
   updateCalculations();
   renderAll();
   startTimerLoop();
 });
+
+/* V11以前のセッションにpauseIntervalsを追加する後方互換 */
+function migrateSession(){
+  if(session && !session.pauseIntervals) session.pauseIntervals = [];
+  if(session) saveSession();
+}
+
+/* =========================================================
+   離脱区間ヘルパ
+========================================================= */
+function isPaused(){
+  if(!session || !session.pauseIntervals) return false;
+  const last = session.pauseIntervals[session.pauseIntervals.length-1];
+  return last && last.end === null;
+}
+function getPausedTotalMs(untilTime){
+  if(!session || !session.pauseIntervals) return 0;
+  let total = 0;
+  session.pauseIntervals.forEach(p=>{
+    const end = p.end === null ? untilTime : p.end;
+    if(end > p.start) total += (end - p.start);
+  });
+  return total;
+}
+// 区間 [t0,t1] の間で「稼働していた実時間」（離脱を差し引く）
+function activeDurationMs(t0, t1){
+  if(t1 <= t0) return 0;
+  if(!session || !session.pauseIntervals || session.pauseIntervals.length===0) return t1-t0;
+  let paused = 0;
+  session.pauseIntervals.forEach(p=>{
+    const ps = Math.max(t0, p.start);
+    const pe = Math.min(t1, p.end === null ? t1 : p.end);
+    if(pe > ps) paused += (pe - ps);
+  });
+  return Math.max(0, (t1-t0) - paused);
+}
 
 /* =========================================================
    configスナップショット関連
@@ -353,11 +417,9 @@ function captureCurrentConfig(){
   };
 }
 
-// スナップショットから1時間あたり期待値を計算
 function calcHourlyFromConfig(cfg){
   const pk = POKEMON[cfg.pokemon];
   const lvlBonus = 1 - (cfg.level-1)*0.002;
-  // 性格補正取得（selectの中を検索）
   const natOpt = Array.from(document.getElementById('nature').options).find(o=>o.value===cfg.nature);
   const nSpeed = natOpt ? parseFloat(natOpt.dataset.speed) : 0;
   const nSkill = natOpt ? parseFloat(natOpt.dataset.skill) : 1;
@@ -385,38 +447,34 @@ function calcHourlyFromConfig(cfg){
   return (3600/activePeriod)*effectiveProb;
 }
 
-// セッションのconfigChangesを使って、期間ごとに期待値を積算
+/* V12: 期間ごとの期待値積算（離脱区間除外＋config変化対応） */
 function calcSessionExpected(untilTime){
-  if(!session || !session.configChanges || session.configChanges.length===0){
-    // configChangesが無い場合は今の設定で全期間計算（後方互換）
-    const hourly = parseFloat(document.getElementById('hourly-exp').textContent);
-    return ((untilTime - session.startTime)/3600000) * hourly;
-  }
-  const changes = [...session.configChanges].sort((a,b)=>a.time-b.time);
+  if(!session) return 0;
+  const changes = (session.configChanges && session.configChanges.length>0) ? [...session.configChanges].sort((a,b)=>a.time-b.time) : [{...captureCurrentConfig(), time: session.startTime}];
   let total = 0;
   for(let i=0;i<changes.length;i++){
     const cfg = changes[i];
     const start = cfg.time;
     const end = (i+1<changes.length) ? Math.min(changes[i+1].time, untilTime) : untilTime;
     if(end<=start) continue;
-    const hours = (end - start)/3600000;
-    total += hours * calcHourlyFromConfig(cfg);
+    const activeMs = activeDurationMs(start, end);
+    total += (activeMs/3600000) * calcHourlyFromConfig(cfg);
   }
   return total;
 }
 
-// セッションのconfigChangesを使って、期間ごとにストックロスを積算
 function calcSessionStockLossTotal(untilTime){
   if(!session) return 0;
   const changes = (session.configChanges && session.configChanges.length>0) ? [...session.configChanges].sort((a,b)=>a.time-b.time) : null;
-  const events = [...session.events].sort((a,b)=>a.time-b.time);
-  let tapPoints = [session.startTime, ...events.map(e=>e.time), untilTime];
+  const events = [...(session.events||[])].sort((a,b)=>a.time-b.time);
+  const tapPoints = [session.startTime, ...events.map(e=>e.time), untilTime];
   let loss = 0;
   for(let i=0;i<tapPoints.length-1;i++){
     const t0 = tapPoints[i], t1 = tapPoints[i+1];
-    const gapH = (t1-t0)/3600000;
+    // 離脱期間を除いた実稼働時間でロス計算
+    const activeMs = activeDurationMs(t0, t1);
+    const gapH = activeMs/3600000;
     if(gapH < GAP_THRESHOLD_HOURS) continue;
-    // このギャップ中の平均hourly（configChangesで加重平均）
     let hourly;
     if(changes){
       let sum=0, dur=0;
@@ -426,9 +484,12 @@ function calcSessionStockLossTotal(untilTime){
         const os = Math.max(t0, cs);
         const oe = Math.min(t1, ce);
         if(oe>os){
-          const h = (oe-os)/3600000;
-          sum += h * calcHourlyFromConfig(changes[j]);
-          dur += h;
+          const am = activeDurationMs(os, oe);
+          if(am>0){
+            const h = am/3600000;
+            sum += h * calcHourlyFromConfig(changes[j]);
+            dur += h;
+          }
         }
       }
       hourly = dur>0 ? sum/dur : parseFloat(document.getElementById('hourly-exp').textContent);
@@ -441,9 +502,7 @@ function calcSessionStockLossTotal(untilTime){
   return loss;
 }
 
-/* =========================================================
-   ポアソン
-========================================================= */
+/* ポアソン */
 function factorial(n){ let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
 function poisson(k, lam){ return Math.pow(lam,k) * Math.exp(-lam) / factorial(k); }
 function calcStockLoss(gapHours, hourlyExpected, stockCap){
@@ -457,9 +516,7 @@ function calcStockLoss(gapHours, hourlyExpected, stockCap){
   return loss;
 }
 
-/* =========================================================
-   ストレージ
-========================================================= */
+/* ストレージ */
 function saveConfig(){
   const cfg = captureCurrentConfig();
   cfg.skillLv = val('skill-lv');
@@ -496,6 +553,8 @@ function setChk(id,v){document.getElementById(id).checked=!!v;}
 function fmtTime(dt){ return new Date(dt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
 function fmtDate(dt){ const d=new Date(dt); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function todayJPHeader(dt){ const d=new Date(dt); return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`; }
+function monthKey(dt){ const d=new Date(dt); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+function monthJPHeader(dt){ const d=new Date(dt); return `${d.getFullYear()}年${d.getMonth()+1}月`; }
 function weekStartMonday(dt){ const d=new Date(dt); const wd=(d.getDay()+6)%7; d.setHours(0,0,0,0); d.setDate(d.getDate()-wd); return d; }
 
 function toggleExFav(t){
@@ -518,7 +577,6 @@ function updateCalculations(){
   const cfg = captureCurrentConfig();
   const pk = POKEMON[cfg.pokemon];
 
-  // 表示おてつだい時間
   const lvlBonus = 1 - (cfg.level-1)*0.002;
   const natOpt = document.getElementById('nature').options[document.getElementById('nature').selectedIndex];
   const nSpeed = parseFloat(natOpt.dataset.speed);
@@ -531,7 +589,6 @@ function updateCalculations(){
   const gamePeriod = Math.floor(pk.basePeriod*(1+nSpeed)*(1+subSpeed)*lvlBonus);
   document.getElementById('calculated-period').textContent = `${Math.floor(gamePeriod/60)}分${gamePeriod%60}秒`;
 
-  // スキル確率と天井考慮
   let subProb = 0;
   if(cfg.probM) subProb += 0.36;
   if(cfg.probS) subProb += 0.18;
@@ -552,7 +609,7 @@ function updateCalculations(){
    セッション制御
 ========================================================= */
 function startSession(){
-  if(session && session.events.length>0){
+  if(session && session.events && session.events.length>0){
     if(!confirm('現在のセッションを破棄して開始しますか？')) return;
   }
   const now = Date.now();
@@ -562,6 +619,7 @@ function startSession(){
     startTime: now,
     events: [],
     configChanges: [{...cfg, time: now}],
+    pauseIntervals: [],
     lastTapTime: now,
   };
   energyState = { baseVal:100, lastUpdate: now };
@@ -569,6 +627,7 @@ function startSession(){
   addLog(`▶ 計測開始 (${fmtTime(now)}, ${POKEMON[session.pokemon].name}) おてボ${cfg.otomo}枚`);
   updateSessionDashboard();
   renderConfigLog();
+  renderPauseLog();
 }
 
 function manualStart(){
@@ -582,6 +641,7 @@ function manualStart(){
     startTime: d.getTime(),
     events: [],
     configChanges: [{...cfg, time: d.getTime()}],
+    pauseIntervals: [],
     lastTapTime: d.getTime(),
   };
   energyState = { baseVal:100, lastUpdate:d.getTime() };
@@ -589,23 +649,101 @@ function manualStart(){
   addLog(`▶ 手動開始 (${fmtTime(d)}, ${POKEMON[session.pokemon].name}) おてボ${cfg.otomo}枚`);
   updateSessionDashboard();
   renderConfigLog();
+  renderPauseLog();
 }
 
-// 環境変更を記録（timeにnullを渡すと現在時刻）
+/* ★V12: パーティー離脱/復帰トグル */
+function togglePause(atTime){
+  if(!session){ alert('先に計測を開始してください'); return; }
+  const time = atTime || Date.now();
+  if(!session.pauseIntervals) session.pauseIntervals = [];
+  if(isPaused()){
+    // 復帰
+    const last = session.pauseIntervals[session.pauseIntervals.length-1];
+    if(time <= last.start){ alert('復帰時刻は離脱時刻より後にしてください'); return; }
+    last.end = time;
+    // げんき度は離脱時のまま維持されているので、復帰時に減衰タイマー再スタート
+    energyState.lastUpdate = time;
+    saveSession(); saveEnergy();
+    addLog(`▶ ${fmtTime(time)} パーティー復帰（離脱${((last.end-last.start)/60000).toFixed(0)}分）`);
+  } else {
+    // 離脱：離脱時点のげんき度を固定
+    const curEnergy = getLiveEnergy();
+    energyState.baseVal = curEnergy;
+    energyState.lastUpdate = null; // タイマー停止
+    session.pauseIntervals.push({ start: time, end: null });
+    saveSession(); saveEnergy();
+    addLog(`⏸ ${fmtTime(time)} パーティー離脱（げんき${Math.floor(curEnergy)}%で保持）`);
+  }
+  updateSessionDashboard();
+  renderPauseLog();
+}
+
+function showManualPause(){
+  if(!session){ alert('先に計測を開始してください'); return; }
+  document.getElementById('manual-pause-row').style.display = 'flex';
+  document.getElementById('manual-pause-start').focus();
+}
+
+function applyManualPause(){
+  if(!session){ alert('先に計測を開始してください'); return; }
+  const s = val('manual-pause-start');
+  const e = val('manual-pause-end');
+  if(!s || !e){ alert('離脱時刻と復帰時刻を入力してください'); return; }
+  const [sh,sm] = s.split(':').map(Number);
+  const [eh,em] = e.split(':').map(Number);
+  const ds = new Date(session.startTime); ds.setHours(sh,sm,0,0);
+  const de = new Date(session.startTime); de.setHours(eh,em,0,0);
+  if(ds < new Date(session.startTime)) ds.setDate(ds.getDate()+1);
+  if(de < ds) de.setDate(de.getDate()+1);
+  if(!session.pauseIntervals) session.pauseIntervals = [];
+  session.pauseIntervals.push({ start: ds.getTime(), end: de.getTime() });
+  session.pauseIntervals.sort((a,b)=>a.start-b.start);
+  saveSession();
+  addLog(`⤵ 手動離脱 ${fmtTime(ds)}〜${fmtTime(de)}（${((de-ds)/60000).toFixed(0)}分）`);
+  updateSessionDashboard();
+  renderPauseLog();
+  document.getElementById('manual-pause-row').style.display = 'none';
+  document.getElementById('manual-pause-start').value = '';
+  document.getElementById('manual-pause-end').value = '';
+}
+
+function renderPauseLog(){
+  const c = document.getElementById('pause-log-container');
+  c.innerHTML = '';
+  if(!session || !session.pauseIntervals || session.pauseIntervals.length===0){ return; }
+  const div = document.createElement('div');
+  div.className = 'pause-log';
+  div.innerHTML = '<b>⏸ パーティー離脱履歴</b>';
+  session.pauseIntervals.forEach(p=>{
+    const item = document.createElement('div');
+    item.className = 'pause-log-item';
+    if(p.end === null){
+      const dur = ((Date.now()-p.start)/60000).toFixed(0);
+      item.innerHTML = `${fmtTime(p.start)} 〜 <span style="color:#c53030;">現在も離脱中</span> (${dur}分)`;
+    } else {
+      const dur = ((p.end-p.start)/60000).toFixed(0);
+      item.innerHTML = `${fmtTime(p.start)} 〜 ${fmtTime(p.end)} (${dur}分)`;
+    }
+    div.appendChild(item);
+  });
+  c.appendChild(div);
+}
+
+/* 環境変更 (V11から継続) */
 function snapshotConfig(atTime){
   if(!session){ alert('先に計測を開始してください'); return; }
   const time = atTime || Date.now();
   const cfg = captureCurrentConfig();
-  // ポケモン変更は別セッション扱いにしないと複雑なので、警告のみ
   if(cfg.pokemon !== session.pokemon){
-    if(!confirm(`⚠️ ポケモンが変わっています（${POKEMON[session.pokemon].name}→${POKEMON[cfg.pokemon].name}）。それでも記録しますか？`)) return;
+    if(!confirm(`⚠️ ポケモンが変わっています。それでも記録しますか？`)) return;
   }
+  if(!session.configChanges) session.configChanges = [];
   session.configChanges.push({...cfg, time});
   session.configChanges.sort((a,b)=>a.time-b.time);
   saveSession();
   const prev = session.configChanges[session.configChanges.length-2];
-  const diff = describeConfigDiff(prev, cfg);
-  addLog(`⚙ ${fmtTime(time)} 環境変更: ${diff}`);
+  addLog(`⚙ ${fmtTime(time)} 環境変更: ${describeConfigDiff(prev, cfg)}`);
   updateSessionDashboard();
   renderConfigLog();
 }
@@ -624,7 +762,7 @@ function describeConfigDiff(prev, cur){
   if(prev.speedS !== cur.speedS) diffs.push(`スピS${cur.speedS?'ON':'OFF'}`);
   if(prev.nature !== cur.nature) diffs.push(`性格→${cur.nature}`);
   if(prev.level !== cur.level) diffs.push(`Lv→${cur.level}`);
-  return diffs.length>0 ? diffs.join(', ') : '変更なし（同じ設定）';
+  return diffs.length>0 ? diffs.join(', ') : '変更なし';
 }
 
 function showManualConfigChange(){
@@ -632,7 +770,6 @@ function showManualConfigChange(){
   document.getElementById('manual-cfg-row').style.display = 'flex';
   document.getElementById('manual-cfg-time').focus();
 }
-
 function applyManualConfigChange(){
   if(!session){ alert('先に計測を開始してください'); return; }
   const t = val('manual-cfg-time'); if(!t){ alert('時刻を選んでください'); return; }
@@ -657,14 +794,15 @@ function renderConfigLog(){
     const hourly = calcHourlyFromConfig(cfg);
     const item = document.createElement('div');
     item.className = 'config-log-item';
-    item.innerHTML = `${fmtTime(cfg.time)} ${label} <span style="color:#718096;">(期待値 ${hourly.toFixed(3)}/h, おてボ${cfg.otomo}枚)</span>`;
+    item.innerHTML = `${fmtTime(cfg.time)} ${label} <span style="color:#718096;">(期待値 ${hourly.toFixed(3)}/h)</span>`;
     div.appendChild(item);
   });
   c.appendChild(div);
 }
 
 function recordEvent(type){
-  if(!session){ alert('先に「計測開始」を押してください'); return; }
+  if(!session){ alert('先に計測開始を押してください'); return; }
+  if(isPaused()){ alert('パーティー離脱中です。復帰してから記録してください'); return; }
   const now = Date.now();
   const before = getLiveEnergy();
   session.events.push({ time: now, type });
@@ -681,7 +819,7 @@ function recordEvent(type){
 }
 
 function manualAddEvent(){
-  if(!session){ alert('先に「計測開始」を押してください'); return; }
+  if(!session){ alert('先に計測開始を押してください'); return; }
   const t = val('manual-evt-time'); const ty = val('manual-evt-type');
   if(!t){ alert('時刻を選んでください'); return; }
   const [h,m] = t.split(':').map(Number);
@@ -709,13 +847,21 @@ function resetSession(){
   session = null; saveSession();
   document.getElementById('log-list').innerHTML='';
   document.getElementById('config-log-container').innerHTML='';
+  document.getElementById('pause-log-container').innerHTML='';
   updateSessionDashboard();
 }
 
 function endDay(){
   if(!session){ alert('セッションが未開始です'); return; }
+  if(isPaused()){
+    if(!confirm('離脱中のまま終了しますか？（現在時刻で自動復帰します）')) return;
+    togglePause(null);
+  }
   const endT = Date.now();
   const elapsedH = (endT - session.startTime)/3600000;
+  const activeMs = activeDurationMs(session.startTime, endT);
+  const activeH = activeMs/3600000;
+  const pausedH = (elapsedH - activeH);
   const miss = session.events.filter(e=>e.type==='miss').length;
   const one  = session.events.filter(e=>e.type==='one').length;
   const two  = session.events.filter(e=>e.type==='two').length;
@@ -731,12 +877,15 @@ function endDay(){
     startTime: session.startTime,
     endTime: endT,
     elapsedH: Number(elapsedH.toFixed(2)),
+    activeH: Number(activeH.toFixed(2)),
+    pausedH: Number(pausedH.toFixed(2)),
     miss, one, two, procs,
     rawExpected: Number(rawExpected.toFixed(2)),
     stockLoss: Number(totalLoss.toFixed(2)),
     expected: Number(expected.toFixed(2)),
     diff: Number(diff.toFixed(2)),
     configChanges: session.configChanges,
+    pauseIntervals: session.pauseIntervals,
   };
   dailyLogs.push(entry);
   saveLogs();
@@ -744,7 +893,7 @@ function endDay(){
 
   alert(`📊 ${entry.date} のサマリー\n`+
     `ポケモン: ${entry.pokemon}\n`+
-    `計測: ${entry.elapsedH}時間\n`+
+    `全経過: ${entry.elapsedH}時間 (稼働${entry.activeH}h / 離脱${entry.pausedH}h)\n`+
     `不発: ${miss} / 1回: ${one} / 2回: ${two}\n`+
     `実発動: ${procs}\n`+
     `理論期待値: ${entry.rawExpected}\n`+
@@ -754,13 +903,20 @@ function endDay(){
 
   document.getElementById('log-list').innerHTML='';
   document.getElementById('config-log-container').innerHTML='';
+  document.getElementById('pause-log-container').innerHTML='';
   updateSessionDashboard();
-  renderWeekly();
+  renderMonthly();
 }
 
 function updateSessionDashboard(){
   const ss = document.getElementById('session-state');
   const st = document.getElementById('session-start');
+  const pauseBadge = document.getElementById('pause-badge');
+  const btnPause = document.getElementById('btn-pause');
+  const missEl = document.getElementById('btn-miss-el');
+  const oneEl = document.getElementById('btn-one-el');
+  const twoEl = document.getElementById('btn-two-el');
+
   if(!session){
     ss.textContent='未開始'; st.textContent='--:--';
     document.getElementById('elapsed-time').textContent='0.0h';
@@ -768,12 +924,30 @@ function updateSessionDashboard(){
     document.getElementById('diff-count').textContent='±0.00';
     document.getElementById('diff-count').className='stat-val';
     document.getElementById('stock-loss').textContent='0.00';
+    document.getElementById('pause-time').textContent='0.0h';
     ['miss-count','one-count','two-count','btn-miss','btn-one','btn-two'].forEach(id=>document.getElementById(id).textContent='0');
+    pauseBadge.style.display='none';
+    missEl.disabled = true; oneEl.disabled = true; twoEl.disabled = true;
+    btnPause.disabled = true;
+    btnPause.textContent = '⏸ パーティー離脱';
+    btnPause.className = 'pause';
     updateEnergyDisplay(); return;
   }
-  ss.textContent = '計測中'; st.textContent = fmtTime(session.startTime);
+
+  const paused = isPaused();
+  ss.textContent = paused ? '⏸ 離脱中' : '計測中';
+  st.textContent = fmtTime(session.startTime);
+  pauseBadge.style.display = paused ? 'inline-block' : 'none';
+  btnPause.disabled = false;
+  btnPause.textContent = paused ? '▶ パーティー復帰' : '⏸ パーティー離脱';
+  btnPause.className = paused ? 'resume' : 'pause';
+  missEl.disabled = paused; oneEl.disabled = paused; twoEl.disabled = paused;
+
   const now=Date.now();
-  const elapsedH=(now-session.startTime)/3600000;
+  const activeMs = activeDurationMs(session.startTime, now);
+  const activeH = activeMs/3600000;
+  const pausedMs = getPausedTotalMs(now);
+
   const rawExpected = calcSessionExpected(now);
   const totalLoss = calcSessionStockLossTotal(now);
   const effectiveExpected = chk('stock-correction') ? Math.max(0, rawExpected - totalLoss) : rawExpected;
@@ -784,9 +958,10 @@ function updateSessionDashboard(){
   const procs= one+two*2;
   const diff = procs - effectiveExpected;
 
-  document.getElementById('elapsed-time').textContent = elapsedH.toFixed(1)+'h';
+  document.getElementById('elapsed-time').textContent = activeH.toFixed(1)+'h';
   document.getElementById('expected-count').textContent = effectiveExpected.toFixed(2);
   document.getElementById('stock-loss').textContent = totalLoss.toFixed(2);
+  document.getElementById('pause-time').textContent = (pausedMs/3600000).toFixed(1)+'h';
   document.getElementById('miss-count').textContent = miss;
   document.getElementById('one-count').textContent = one;
   document.getElementById('two-count').textContent = two;
@@ -797,12 +972,16 @@ function updateSessionDashboard(){
   const de = document.getElementById('diff-count');
   if(diff>=0){ de.textContent='+'+diff.toFixed(2); de.className='stat-val plus'; }
   else { de.textContent=diff.toFixed(2); de.className='stat-val minus'; }
+
+  // 離脱ログの「離脱中」表記の時間を毎回更新するため再描画
+  renderPauseLog();
+
   updateEnergyDisplay();
 }
 
 /* げんき */
 function getLiveEnergy(){
-  if(!energyState.lastUpdate) return energyState.baseVal;
+  if(!energyState.lastUpdate) return energyState.baseVal; // タイマー停止中はbaseValを維持
   const el = (Date.now()-energyState.lastUpdate)/60000;
   return Math.max(0, energyState.baseVal - el/10);
 }
@@ -810,7 +989,7 @@ function setManualEnergy(){
   const v = parseFloat(val('manual-energy'));
   if(isNaN(v)) return;
   energyState.baseVal = Math.min(150, Math.max(0,v));
-  energyState.lastUpdate = Date.now();
+  energyState.lastUpdate = isPaused() ? null : Date.now();
   saveEnergy();
   addLog(`げんき度を ${Math.floor(energyState.baseVal)}% に手動設定`);
   updateEnergyDisplay();
@@ -826,6 +1005,7 @@ function updateEnergyDisplay(){
   const live = getLiveEnergy();
   document.getElementById('cur-energy').textContent = Math.floor(live)+'%';
   const p = document.getElementById('predict80');
+  if(isPaused()){ p.textContent='離脱中(停止)'; p.style.color='#276749'; return; }
   if(live<=80){ p.textContent='すでに80%未満'; p.style.color='#e53e3e'; }
   else{
     const m = (live-80)*10;
@@ -846,47 +1026,88 @@ function renderTodayLog(){
   const items = [`▶ 開始 ${fmtTime(session.startTime)} (${POKEMON[session.pokemon].name})`];
   const merged = [
     ...session.events.map(e=>({time:e.time, text:`${fmtTime(e.time)} ${e.type==='miss'?'不発':(e.type==='one'?'1回発動':'2回発動')}`})),
-    ...(session.configChanges||[]).slice(1).map((c,i)=>{
+    ...((session.configChanges||[]).slice(1).map((c,i)=>{
       const prev = session.configChanges[i];
       return {time:c.time, text:`⚙ ${fmtTime(c.time)} 環境変更: ${describeConfigDiff(prev,c)}`};
-    })
+    })),
+    ...((session.pauseIntervals||[]).flatMap(p=>{
+      const arr = [{time:p.start, text:`⏸ ${fmtTime(p.start)} パーティー離脱`}];
+      if(p.end !== null) arr.push({time:p.end, text:`▶ ${fmtTime(p.end)} パーティー復帰`});
+      return arr;
+    })),
   ].sort((a,b)=>a.time-b.time);
   merged.forEach(m=>items.push(m.text));
   items.reverse().forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); });
 }
 
-/* 週次 */
-function renderWeekly(){
-  const container=document.getElementById('weekly-container');
+/* ★V12: 月次→週次の折りたたみ表示 */
+function renderMonthly(){
+  const container=document.getElementById('monthly-container');
   container.innerHTML='';
-  if(!dailyLogs.length){ container.innerHTML='<p style="font-size:.8rem;color:#718096;">まだ週次ログはありません。</p>'; return; }
-  const groups={};
+  if(!dailyLogs.length){ container.innerHTML='<p style="font-size:.8rem;color:#718096;">まだログはありません。</p>'; return; }
+
+  // 月ごとにグループ化
+  const monthGroups = {};
   dailyLogs.forEach(log=>{
-    const ws = weekStartMonday(log.startTime);
-    const key = fmtDate(ws);
-    if(!groups[key]) groups[key]={weekStart:ws, entries:[]};
-    groups[key].entries.push(log);
+    const mk = monthKey(log.startTime);
+    if(!monthGroups[mk]) monthGroups[mk] = {monthDate: new Date(log.startTime), entries:[]};
+    monthGroups[mk].entries.push(log);
   });
-  Object.keys(groups).sort().reverse().forEach(k=>{
-    const g=groups[k];
-    const div=document.createElement('div'); div.className='weekly-block';
-    let sumProcs=0, sumExp=0, sumHours=0, sumLoss=0;
-    const lines = g.entries.sort((a,b)=>a.startTime-b.startTime).map(e=>{
-      sumProcs+=e.procs; sumExp+=e.expected; sumHours+=e.elapsedH; sumLoss+=(e.stockLoss||0);
-      const arrow = e.diff>=0?`⬆+${e.diff}`:`⬇${e.diff}`;
-      return `${todayJPHeader(e.startTime)}(${e.pokemon}) ${e.elapsedH}h 実${e.procs} 期${e.expected} ロス${e.stockLoss||0} ${arrow} [不${e.miss}/1${e.one}/2${e.two}]`;
+
+  const currentMonth = monthKey(Date.now());
+  const sortedKeys = Object.keys(monthGroups).sort().reverse();
+
+  sortedKeys.forEach(mk => {
+    const mg = monthGroups[mk];
+    const details = document.createElement('details');
+    details.className = 'month-block';
+    if(mk === currentMonth) details.open = true;
+
+    // 月合計
+    let mTotalProcs=0, mTotalExp=0, mTotalHours=0, mTotalLoss=0, mTotalPause=0;
+    mg.entries.forEach(e=>{
+      mTotalProcs+=e.procs; mTotalExp+=e.expected; mTotalHours+=(e.activeH||e.elapsedH);
+      mTotalLoss+=(e.stockLoss||0); mTotalPause+=(e.pausedH||0);
     });
-    const weekDiff = (sumProcs-sumExp).toFixed(2);
-    div.innerHTML = `<h4>${todayJPHeader(g.weekStart)}週</h4>`+
-      lines.map(l=>`<div>・${l}</div>`).join('')+
-      `<div style="margin-top:4px;font-weight:bold;">週合計: ${sumHours.toFixed(1)}h / 実${sumProcs} / 期待${sumExp.toFixed(2)} / ロス${sumLoss.toFixed(2)} / ${weekDiff>=0?'+':''}${weekDiff}</div>`;
-    container.appendChild(div);
+    const mDiff = (mTotalProcs-mTotalExp).toFixed(2);
+    const summary = document.createElement('summary');
+    summary.innerHTML = `${monthJPHeader(mg.monthDate)} <span style="font-weight:normal;font-size:.75rem;color:#718096;">(${mg.entries.length}日 / 実${mTotalProcs} / 期待${mTotalExp.toFixed(1)} / ${mDiff>=0?'+':''}${mDiff})</span>`;
+    details.appendChild(summary);
+
+    // 週次で更に分割
+    const weekGroups = {};
+    mg.entries.forEach(log=>{
+      const ws = weekStartMonday(log.startTime);
+      const key = fmtDate(ws);
+      if(!weekGroups[key]) weekGroups[key] = {weekStart:ws, entries:[]};
+      weekGroups[key].entries.push(log);
+    });
+
+    Object.keys(weekGroups).sort().reverse().forEach(wk=>{
+      const wg = weekGroups[wk];
+      const wdiv = document.createElement('div');
+      wdiv.className = 'weekly-block';
+      let wProcs=0, wExp=0, wHours=0, wLoss=0, wPause=0;
+      const lines = wg.entries.sort((a,b)=>a.startTime-b.startTime).map(e=>{
+        wProcs+=e.procs; wExp+=e.expected; wHours+=(e.activeH||e.elapsedH); wLoss+=(e.stockLoss||0); wPause+=(e.pausedH||0);
+        const arrow = e.diff>=0?`⬆+${e.diff}`:`⬇${e.diff}`;
+        const pauseLabel = e.pausedH>0 ? ` 離脱${e.pausedH}h` : '';
+        return `${todayJPHeader(e.startTime)}(${e.pokemon}) 稼働${(e.activeH||e.elapsedH)}h${pauseLabel} 実${e.procs} 期${e.expected} ロス${e.stockLoss||0} ${arrow}`;
+      });
+      const weekDiff = (wProcs-wExp).toFixed(2);
+      wdiv.innerHTML = `<h4>${todayJPHeader(wg.weekStart)}週</h4>`+
+        lines.map(l=>`<div>・${l}</div>`).join('')+
+        `<div style="margin-top:4px;font-weight:bold;">週合計: 稼働${wHours.toFixed(1)}h / 実${wProcs} / 期待${wExp.toFixed(2)} / ロス${wLoss.toFixed(2)} / ${weekDiff>=0?'+':''}${weekDiff}</div>`;
+      details.appendChild(wdiv);
+    });
+
+    container.appendChild(details);
   });
 }
 
 /* エクスポート/インポート */
 function buildPayload(){
-  return { version:11, exportedAt: new Date().toISOString(),
+  return { version:12, exportedAt: new Date().toISOString(),
     dailyLogs, session,
     config: JSON.parse(localStorage.getItem(K_CFG)||'{}') };
 }
@@ -922,7 +1143,7 @@ function applyPayload(raw){
     if(!confirm('現在のログを上書きして復元しますか？')) return;
     dailyLogs = obj.dailyLogs;
     saveLogs();
-    if(obj.session){ session = obj.session; saveSession(); }
+    if(obj.session){ session = obj.session; migrateSession(); saveSession(); }
     if(obj.config){ localStorage.setItem(K_CFG, JSON.stringify(obj.config)); loadConfig(); onPokemonChange(true); updateCalculations(); }
     renderAll();
     alert('復元しました');
@@ -944,11 +1165,14 @@ function startTimerLoop(){
 /* 初期描画 */
 function renderAll(){
   renderTodayLog();
-  renderWeekly();
+  renderMonthly();
   renderConfigLog();
+  renderPauseLog();
   updateSessionDashboard();
 }
-  if ('serviceWorker' in navigator) {
+
+/* Service Worker（PWA用） */
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js');
   });
