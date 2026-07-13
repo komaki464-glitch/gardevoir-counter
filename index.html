@@ -77,7 +77,6 @@
 <div class="container">
   <h1>ポケスリ カウンター V14 <span id="pkm-badge" class="badge">サーナイト</span><span id="pause-badge" class="badge paused" style="display:none;">⏸ 離脱中</span></h1>
 
-  <!-- ▼ ポケモン切替 -->
   <div class="section-title">ポケモン選択</div>
   <div class="box">
     <div class="row">
@@ -95,7 +94,6 @@
     </div>
   </div>
 
-  <!-- ▼ 個体・環境設定 -->
   <div class="section-title">個体・環境設定</div>
   <div class="box">
     <details id="config-details">
@@ -188,7 +186,7 @@
           <label>ストック補正:</label>
           <label><input type="checkbox" id="stock-correction" checked onchange="saveConfig();updateSessionDashboard();">2回発動時のみロスを差し引く</label>
         </div>
-        <div class="hint">※ 元気81%以上を維持する前提で、実速度は表示×2.22倍で計算しています。<br>※ V14: 「2回発動」があった間隔だけ、ストック超過分をポアソン計算で推定します。単発or不発のみの日はロス0です。</div>
+        <div class="hint">※ 元気81%以上を維持する前提で、実速度は表示×2.22倍で計算しています。<br>※ V14: 「2回発動」があった間隔だけ、ストック超過分をポアソン計算で推定します。</div>
       </div>
     </details>
 
@@ -202,7 +200,6 @@
     </div>
   </div>
 
-  <!-- ▼ 計測セッション -->
   <div class="section-title">計測セッション</div>
   <div class="box">
     <div class="row">
@@ -250,7 +247,6 @@
     <div id="pause-log-container"></div>
   </div>
 
-  <!-- ▼ げんき度 -->
   <div class="section-title">げんき度シミュレート</div>
   <div class="box">
     <div class="stat-grid">
@@ -266,7 +262,6 @@
     </div>
   </div>
 
-  <!-- ▼ 手動入力 -->
   <div class="section-title">手動入力（記録忘れ用）</div>
   <div class="box">
     <div class="row">
@@ -305,12 +300,10 @@
     </div>
   </div>
 
-  <!-- ▼ 今日のログ -->
   <div class="section-title">本日のイベントログ</div>
   <ul class="log-list" id="log-list"></ul>
 </div>
 
-<!-- ▼ 週次ログ・データ管理 -->
 <div class="container">
   <div class="section-title">月次 → 週次ログ（過去の記録）</div>
   <div id="monthly-container"></div>
@@ -397,7 +390,6 @@ function activeDurationMs(t0, t1){
   return Math.max(0, (t1-t0) - paused);
 }
 
-// V14: イベントバフ radio 取得
 function getEventBuffType(){
   const radios = document.getElementsByName('event-buff');
   for(const r of radios){ if(r.checked) return r.value; }
@@ -445,7 +437,6 @@ function calcHourlyFromConfig(cfg){
   if(cfg.probM) subProb += 0.36;
   if(cfg.probS) subProb += 0.18;
   let finalProb = pk.baseProb*(1+subProb)*nSkill;
-  // V14: exBuffType（後方互換：旧 exBuff=true は 1.25 扱い）
   let bufMul = 1;
   if(cfg.exBuffType === '1.25' || cfg.exBuff === true) bufMul = 1.25;
   else if(cfg.exBuffType === '1.5') bufMul = 1.5;
@@ -471,7 +462,6 @@ function calcSessionExpected(untilTime){
   return total;
 }
 
-// V14: 「2回発動」で終わるギャップのみをロス計算対象にする
 function calcSessionStockLossTotal(untilTime){
   if(!session) return 0;
   const changes = (session.configChanges && session.configChanges.length>0) ? [...session.configChanges].sort((a,b)=>a.time-b.time) : null;
@@ -486,7 +476,6 @@ function calcSessionStockLossTotal(untilTime){
       const activeMs = activeDurationMs(prevTime, evt.time);
       const gapH = activeMs/3600000;
       if(gapH >= GAP_THRESHOLD_HOURS){
-        // 加重平均hourly
         let hourly;
         if(changes){
           let sum=0, dur=0;
@@ -514,7 +503,6 @@ function calcSessionStockLossTotal(untilTime){
     }
     prevTime = evt.time;
   }
-  // 最後のイベント以降～現在のギャップは「未確定」→ロス計算しない
   return loss;
 }
 
@@ -547,7 +535,6 @@ function loadConfig(){
     setVal('team-otomo',c.otomo); setVal('skill-lv',c.skillLv);
     setChk('camp-ticket',c.camp);
     setChk('ex-fav-minus',c.exMinus); setChk('ex-fav-plus',c.exPlus);
-    // V14: exBuff → exBuffType 後方互換
     const bufType = c.exBuffType || (c.exBuff ? '1.25' : 'none');
     setEventBuffType(bufType);
     if(c.stockCorr!==undefined) setChk('stock-correction',c.stockCorr);
@@ -1171,3 +1158,13 @@ function renderAll(){
   renderConfigLog();
   renderPauseLog();
   updateSessionDashboard();
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js');
+  });
+}
+</script>
+</body>
+</html>
