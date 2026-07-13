@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ポケスリ スキル＆げんきカウンター V13</title>
+<title>ポケスリ スキル＆げんきカウンター V14</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#68d391">
@@ -19,6 +19,7 @@
   .row:last-child{margin-bottom:0;}
   select,input[type="number"],input[type="time"],input[type="date"],input[type="file"]{padding:4px;border:1px solid #cbd5e0;border-radius:4px;background:#fff;font-size:.85rem;max-width:260px;}
   .chk-group{display:flex;gap:12px;flex-wrap:wrap;}
+  .radio-col{display:flex;flex-direction:column;gap:4px;font-size:.8rem;}
   .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
   .stat{background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center;font-size:.78rem;}
   .stat.full{grid-column:span 2;}
@@ -74,7 +75,7 @@
 <body>
 
 <div class="container">
-  <h1>ポケスリ カウンター V13 <span id="pkm-badge" class="badge">サーナイト</span><span id="pause-badge" class="badge paused" style="display:none;">⏸ 離脱中</span></h1>
+  <h1>ポケスリ カウンター V14 <span id="pkm-badge" class="badge">サーナイト</span><span id="pause-badge" class="badge paused" style="display:none;">⏸ 離脱中</span></h1>
 
   <!-- ▼ ポケモン切替 -->
   <div class="section-title">ポケモン選択</div>
@@ -175,15 +176,19 @@
             <label><input type="checkbox" id="ex-fav-plus" onchange="toggleExFav('plus')">＋10％</label>
           </div>
         </div>
-        <div class="row">
-          <label>EXバフ:</label>
-          <label><input type="checkbox" id="event-skill-buff" onchange="updateCalculations();saveConfig();">スキル発生 1.25倍</label>
+        <div class="row" style="align-items:flex-start;">
+          <label>イベントバフ:</label>
+          <div class="radio-col">
+            <label><input type="radio" name="event-buff" value="none" checked onchange="updateCalculations();saveConfig();">なし</label>
+            <label><input type="radio" name="event-buff" value="1.25" onchange="updateCalculations();saveConfig();">1.25倍（EXバフ等）</label>
+            <label><input type="radio" name="event-buff" value="1.5" onchange="updateCalculations();saveConfig();">1.5倍（スキルウィーク等）</label>
+          </div>
         </div>
         <div class="row">
           <label>ストック補正:</label>
-          <label><input type="checkbox" id="stock-correction" checked onchange="saveConfig();updateSessionDashboard();">放置時のロスを差し引く</label>
+          <label><input type="checkbox" id="stock-correction" checked onchange="saveConfig();updateSessionDashboard();">2回発動時のみロスを差し引く</label>
         </div>
-        <div class="hint">※ 元気81%以上を維持する前提で、実速度は表示×2.22倍で計算しています。<br>※ 2時間以上タップ間隔が空いたら、2回ストック超過による理論ロスをポアソン計算で差し引きます。</div>
+        <div class="hint">※ 元気81%以上を維持する前提で、実速度は表示×2.22倍で計算しています。<br>※ V14: 「2回発動」があった間隔だけ、ストック超過分をポアソン計算で推定します。単発or不発のみの日はロス0です。</div>
       </div>
     </details>
 
@@ -392,6 +397,17 @@ function activeDurationMs(t0, t1){
   return Math.max(0, (t1-t0) - paused);
 }
 
+// V14: イベントバフ radio 取得
+function getEventBuffType(){
+  const radios = document.getElementsByName('event-buff');
+  for(const r of radios){ if(r.checked) return r.value; }
+  return 'none';
+}
+function setEventBuffType(v){
+  const radios = document.getElementsByName('event-buff');
+  for(const r of radios){ r.checked = (r.value === v); }
+}
+
 function captureCurrentConfig(){
   return {
     pokemon: val('pokemon'),
@@ -402,7 +418,7 @@ function captureCurrentConfig(){
     otomo: parseInt(val('team-otomo')),
     camp: chk('camp-ticket'),
     exMinus: chk('ex-fav-minus'), exPlus: chk('ex-fav-plus'),
-    exBuff: chk('event-skill-buff'),
+    exBuffType: getEventBuffType(),
   };
 }
 
@@ -429,7 +445,11 @@ function calcHourlyFromConfig(cfg){
   if(cfg.probM) subProb += 0.36;
   if(cfg.probS) subProb += 0.18;
   let finalProb = pk.baseProb*(1+subProb)*nSkill;
-  if(cfg.exBuff) finalProb *= 1.25;
+  // V14: exBuffType（後方互換：旧 exBuff=true は 1.25 扱い）
+  let bufMul = 1;
+  if(cfg.exBuffType === '1.25' || cfg.exBuff === true) bufMul = 1.25;
+  else if(cfg.exBuffType === '1.5') bufMul = 1.5;
+  finalProb *= bufMul;
 
   const ceilProb = Math.pow(1-finalProb, pk.ceiling);
   const effectiveProb = finalProb / (1 - ceilProb);
@@ -451,41 +471,50 @@ function calcSessionExpected(untilTime){
   return total;
 }
 
+// V14: 「2回発動」で終わるギャップのみをロス計算対象にする
 function calcSessionStockLossTotal(untilTime){
   if(!session) return 0;
   const changes = (session.configChanges && session.configChanges.length>0) ? [...session.configChanges].sort((a,b)=>a.time-b.time) : null;
   const events = [...(session.events||[])].sort((a,b)=>a.time-b.time);
-  const tapPoints = [session.startTime, ...events.map(e=>e.time), untilTime];
+  if(events.length===0) return 0;
+
   let loss = 0;
-  for(let i=0;i<tapPoints.length-1;i++){
-    const t0 = tapPoints[i], t1 = tapPoints[i+1];
-    const activeMs = activeDurationMs(t0, t1);
-    const gapH = activeMs/3600000;
-    if(gapH < GAP_THRESHOLD_HOURS) continue;
-    let hourly;
-    if(changes){
-      let sum=0, dur=0;
-      for(let j=0;j<changes.length;j++){
-        const cs = changes[j].time;
-        const ce = (j+1<changes.length) ? changes[j+1].time : Infinity;
-        const os = Math.max(t0, cs);
-        const oe = Math.min(t1, ce);
-        if(oe>os){
-          const am = activeDurationMs(os, oe);
-          if(am>0){
-            const h = am/3600000;
-            sum += h * calcHourlyFromConfig(changes[j]);
-            dur += h;
+  let prevTime = session.startTime;
+
+  for(const evt of events){
+    if(evt.type === 'two'){
+      const activeMs = activeDurationMs(prevTime, evt.time);
+      const gapH = activeMs/3600000;
+      if(gapH >= GAP_THRESHOLD_HOURS){
+        // 加重平均hourly
+        let hourly;
+        if(changes){
+          let sum=0, dur=0;
+          for(let j=0;j<changes.length;j++){
+            const cs = changes[j].time;
+            const ce = (j+1<changes.length) ? changes[j+1].time : Infinity;
+            const os = Math.max(prevTime, cs);
+            const oe = Math.min(evt.time, ce);
+            if(oe>os){
+              const am = activeDurationMs(os, oe);
+              if(am>0){
+                const h = am/3600000;
+                sum += h * calcHourlyFromConfig(changes[j]);
+                dur += h;
+              }
+            }
           }
+          hourly = dur>0 ? sum/dur : parseFloat(document.getElementById('hourly-exp').textContent);
+        } else {
+          hourly = parseFloat(document.getElementById('hourly-exp').textContent);
         }
+        const pk = POKEMON[session.pokemon];
+        loss += calcStockLoss(gapH, hourly, pk.stockCap);
       }
-      hourly = dur>0 ? sum/dur : parseFloat(document.getElementById('hourly-exp').textContent);
-    } else {
-      hourly = parseFloat(document.getElementById('hourly-exp').textContent);
     }
-    const pk = POKEMON[session.pokemon];
-    loss += calcStockLoss(gapH, hourly, pk.stockCap);
+    prevTime = evt.time;
   }
+  // 最後のイベント以降～現在のギャップは「未確定」→ロス計算しない
   return loss;
 }
 
@@ -518,7 +547,9 @@ function loadConfig(){
     setVal('team-otomo',c.otomo); setVal('skill-lv',c.skillLv);
     setChk('camp-ticket',c.camp);
     setChk('ex-fav-minus',c.exMinus); setChk('ex-fav-plus',c.exPlus);
-    setChk('event-skill-buff',c.exBuff);
+    // V14: exBuff → exBuffType 後方互換
+    const bufType = c.exBuffType || (c.exBuff ? '1.25' : 'none');
+    setEventBuffType(bufType);
     if(c.stockCorr!==undefined) setChk('stock-correction',c.stockCorr);
   }catch(e){}
 }
@@ -577,7 +608,10 @@ function updateCalculations(){
   if(cfg.probM) subProb += 0.36;
   if(cfg.probS) subProb += 0.18;
   let finalProb = pk.baseProb*(1+subProb)*nSkill;
-  if(cfg.exBuff) finalProb *= 1.25;
+  let bufMul = 1;
+  if(cfg.exBuffType === '1.25') bufMul = 1.25;
+  else if(cfg.exBuffType === '1.5') bufMul = 1.5;
+  finalProb *= bufMul;
   document.getElementById('calculated-prob').textContent = (finalProb*100).toFixed(2)+'%';
   const ceilProb = Math.pow(1-finalProb, pk.ceiling);
   const effectiveProb = finalProb / (1 - ceilProb);
@@ -731,7 +765,9 @@ function describeConfigDiff(prev, cur){
   if(prev.camp !== cur.camp) diffs.push(`キャンプ${cur.camp?'ON':'OFF'}`);
   if(prev.exMinus !== cur.exMinus) diffs.push(`EX-10%${cur.exMinus?'ON':'OFF'}`);
   if(prev.exPlus !== cur.exPlus) diffs.push(`EX+10%${cur.exPlus?'ON':'OFF'}`);
-  if(prev.exBuff !== cur.exBuff) diffs.push(`EXバフ${cur.exBuff?'ON':'OFF'}`);
+  const prevBuf = prev.exBuffType || (prev.exBuff ? '1.25' : 'none');
+  const curBuf = cur.exBuffType || (cur.exBuff ? '1.25' : 'none');
+  if(prevBuf !== curBuf) diffs.push(`バフ${prevBuf}→${curBuf}`);
   if(prev.probM !== cur.probM) diffs.push(`確率M${cur.probM?'ON':'OFF'}`);
   if(prev.probS !== cur.probS) diffs.push(`確率S${cur.probS?'ON':'OFF'}`);
   if(prev.speedM !== cur.speedM) diffs.push(`スピM${cur.speedM?'ON':'OFF'}`);
@@ -1075,7 +1111,7 @@ function renderMonthly(){
 }
 
 function buildPayload(){
-  return { version:13, exportedAt: new Date().toISOString(),
+  return { version:14, exportedAt: new Date().toISOString(),
     dailyLogs, session,
     config: JSON.parse(localStorage.getItem(K_CFG)||'{}') };
 }
@@ -1135,13 +1171,3 @@ function renderAll(){
   renderConfigLog();
   renderPauseLog();
   updateSessionDashboard();
-}
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js');
-  });
-}
-</script>
-</body>
-</html>
