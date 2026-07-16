@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ポケスリ スキル＆げんきカウンター V15</title>
+<title>ポケスリ スキル＆げんきカウンター V16</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#68d391">
@@ -624,7 +624,6 @@ function startSession(){
     pauseIntervals: [],
     lastTapTime: now,
   };
-  energyState = { baseVal:100, lastUpdate: now };
   saveSession(); saveEnergy();
   addLog(`▶ 計測開始 (${fmtTime(now)}, ${POKEMON[session.pokemon].name}) おてボ${cfg.otomo}枚`);
   updateSessionDashboard();
@@ -646,7 +645,6 @@ function manualStart(){
     pauseIntervals: [],
     lastTapTime: d.getTime(),
   };
-  energyState = { baseVal:100, lastUpdate:d.getTime() };
   saveSession(); saveEnergy();
   addLog(`▶ 手動開始 (${fmtTime(d)}, ${POKEMON[session.pokemon].name}) おてボ${cfg.otomo}枚`);
   updateSessionDashboard();
