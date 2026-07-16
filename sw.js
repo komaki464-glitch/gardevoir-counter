@@ -1,5 +1,4 @@
 const CACHE_NAME = 'pokesuri-counter-v16';
-
 const urlsToCache = [
   './',
   './index.html',
