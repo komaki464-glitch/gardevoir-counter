@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ポケスリ スキル＆げんきカウンター V16</title>
+<title>ポケスリ スキル＆げんきカウンター V17</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#68d391">
@@ -70,12 +70,13 @@
   .pause-log{background:#f0fff4;border:1px solid #48bb78;border-radius:6px;padding:6px;margin-top:6px;font-size:.75rem;color:#22543d;}
   .pause-log-item{padding:2px 0;border-top:1px dotted #48bb78;}
   .pause-log-item:first-child{border-top:none;}
+  .inline-radio{display:inline-flex;gap:8px;font-size:.75rem;}
 </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>ポケスリ カウンター V16 <span id="pkm-badge" class="badge">サーナイト</span><span id="pause-badge" class="badge paused" style="display:none;">⏸ 離脱中</span></h1>
+  <h1>ポケスリ カウンター V17 <span id="pkm-badge" class="badge">サーナイト</span><span id="pause-badge" class="badge paused" style="display:none;">⏸ 離脱中</span></h1>
 
   <div class="section-title">ポケモン選択</div>
   <div class="box">
@@ -262,7 +263,7 @@
     </div>
   </div>
 
-  <div class="section-title">手動入力（記録忘れ用）</div>
+  <div class="section-title">手動入力（記録忘れ用)</div>
   <div class="box">
     <div class="row">
       <label>開始時刻を過去に:</label>
@@ -290,12 +291,15 @@
         <button onclick="applyManualConfigChange()" style="font-size:.75rem;">この設定で記録</button>
       </div>
     </div>
-    <div class="row" id="manual-pause-row" style="display:none;">
-      <label>離脱区間を過去に:</label>
-      <div style="display:flex;gap:4px;flex-wrap:wrap;">
-        <input type="time" id="manual-pause-start" placeholder="開始">
-        <input type="time" id="manual-pause-end" placeholder="復帰">
-        <button onclick="applyManualPause()" style="font-size:.75rem;">追加</button>
+    <div class="row" id="manual-pause-row" style="display:none;flex-wrap:wrap;">
+      <label>過去時刻で:</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <input type="time" id="manual-pause-time">
+        <span class="inline-radio">
+          <label><input type="radio" name="manual-pause-type" value="leave" checked>離脱</label>
+          <label><input type="radio" name="manual-pause-type" value="return">復帰</label>
+        </span>
+        <button onclick="applyManualPauseSingle()" style="font-size:.75rem;">追加</button>
       </div>
     </div>
   </div>
@@ -625,7 +629,7 @@ function startSession(){
     lastTapTime: now,
   };
   saveSession(); saveEnergy();
-  addLog(`▶ 計測開始 (${fmtTime(now)}, ${POKEMON[session.pokemon].name}) おてボ${cfg.otomo}枚`);
+  addLog(`▶ 計測開始 (${fmtTime(now)}, ${POKEMON[session.pokemon].name}) おてボ${cfg.otomo}枚 / 現在げんき ${Math.floor(getLiveEnergy())}%`);
   updateSessionDashboard();
   renderConfigLog();
   renderPauseLog();
@@ -646,7 +650,7 @@ function manualStart(){
     lastTapTime: d.getTime(),
   };
   saveSession(); saveEnergy();
-  addLog(`▶ 手動開始 (${fmtTime(d)}, ${POKEMON[session.pokemon].name}) おてボ${cfg.otomo}枚`);
+  addLog(`▶ 手動開始 (${fmtTime(d)}, ${POKEMON[session.pokemon].name}) おてボ${cfg.otomo}枚 / 現在げんき ${Math.floor(getLiveEnergy())}%`);
   updateSessionDashboard();
   renderConfigLog();
   renderPauseLog();
@@ -678,30 +682,60 @@ function togglePause(atTime){
 function showManualPause(){
   if(!session){ alert('先に計測を開始してください'); return; }
   document.getElementById('manual-pause-row').style.display = 'flex';
-  document.getElementById('manual-pause-start').focus();
+  document.getElementById('manual-pause-time').focus();
 }
 
-function applyManualPause(){
+// V17: 時刻+ラジオボタン方式で離脱/復帰を1件ずつ追加
+function applyManualPauseSingle(){
   if(!session){ alert('先に計測を開始してください'); return; }
-  const s = val('manual-pause-start');
-  const e = val('manual-pause-end');
-  if(!s || !e){ alert('離脱時刻と復帰時刻を入力してください'); return; }
-  const [sh,sm] = s.split(':').map(Number);
-  const [eh,em] = e.split(':').map(Number);
-  const ds = new Date(session.startTime); ds.setHours(sh,sm,0,0);
-  const de = new Date(session.startTime); de.setHours(eh,em,0,0);
-  if(ds < new Date(session.startTime)) ds.setDate(ds.getDate()+1);
-  if(de < ds) de.setDate(de.getDate()+1);
+  const t = val('manual-pause-time');
+  if(!t){ alert('時刻を選んでください'); return; }
+  const [h,m] = t.split(':').map(Number);
+  const d = new Date(session.startTime);
+  d.setHours(h,m,0,0);
+  if(d < new Date(session.startTime)) d.setDate(d.getDate()+1);
+  const targetTime = d.getTime();
+
+  const radios = document.getElementsByName('manual-pause-type');
+  let type = 'leave';
+  for(const r of radios){ if(r.checked) type = r.value; }
+
   if(!session.pauseIntervals) session.pauseIntervals = [];
-  session.pauseIntervals.push({ start: ds.getTime(), end: de.getTime() });
-  session.pauseIntervals.sort((a,b)=>a.start-b.start);
-  saveSession();
-  addLog(`⤵ 手動離脱 ${fmtTime(ds)}〜${fmtTime(de)}（${((de-ds)/60000).toFixed(0)}分）`);
+
+  if(type === 'leave'){
+    // 現在離脱中なら拒否
+    if(isPaused()){
+      alert('⚠ 既に離脱中です。先に復帰を記録してください。'); return;
+    }
+    // 直前の復帰時刻より前なら拒否
+    const last = session.pauseIntervals[session.pauseIntervals.length-1];
+    if(last && last.end && targetTime <= last.end){
+      alert('⚠ 前回の復帰時刻より後の離脱時刻を指定してください。'); return;
+    }
+    session.pauseIntervals.push({ start: targetTime, end: null });
+    saveSession();
+    addLog(`⏸ 手動離脱 ${fmtTime(targetTime)}`);
+  } else {
+    // 復帰
+    const last = session.pauseIntervals[session.pauseIntervals.length-1];
+    if(!last || last.end !== null){
+      alert('⚠ 離脱中ではありません。先に離脱を記録してください。'); return;
+    }
+    if(targetTime <= last.start){
+      alert('⚠ 復帰時刻は離脱時刻より後にしてください。'); return;
+    }
+    last.end = targetTime;
+    // げんきタイマー再開（復帰時点から時間経過を再計算）
+    if(energyState.lastUpdate === null){
+      energyState.lastUpdate = targetTime;
+      saveEnergy();
+    }
+    saveSession();
+    addLog(`▶ 手動復帰 ${fmtTime(targetTime)}（離脱${((last.end-last.start)/60000).toFixed(0)}分）`);
+  }
   updateSessionDashboard();
   renderPauseLog();
-  document.getElementById('manual-pause-row').style.display = 'none';
-  document.getElementById('manual-pause-start').value = '';
-  document.getElementById('manual-pause-end').value = '';
+  document.getElementById('manual-pause-time').value = '';
 }
 
 function renderPauseLog(){
@@ -1096,7 +1130,7 @@ function renderMonthly(){
 }
 
 function buildPayload(){
-  return { version:14, exportedAt: new Date().toISOString(),
+  return { version:17, exportedAt: new Date().toISOString(),
     dailyLogs, session,
     config: JSON.parse(localStorage.getItem(K_CFG)||'{}') };
 }
