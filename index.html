@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ポケスリ スキル＆げんきカウンター V17</title>
+<title>ポケスリ スキル＆げんきカウンター V18</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#68d391">
@@ -65,18 +65,20 @@
   details summary{cursor:pointer;font-weight:bold;font-size:.9rem;color:#4a5568;margin-bottom:6px;}
   .hint{font-size:.72rem;color:#718096;margin-top:4px;}
   .config-log{background:#fef5e7;border:1px solid #f6ad55;border-radius:6px;padding:6px;margin-top:6px;font-size:.75rem;color:#7b341e;}
-  .config-log-item{padding:2px 0;border-top:1px dotted #f6ad55;}
+  .config-log-item{padding:2px 0;border-top:1px dotted #f6ad55;display:flex;justify-content:space-between;align-items:center;gap:6px;}
   .config-log-item:first-child{border-top:none;}
   .pause-log{background:#f0fff4;border:1px solid #48bb78;border-radius:6px;padding:6px;margin-top:6px;font-size:.75rem;color:#22543d;}
-  .pause-log-item{padding:2px 0;border-top:1px dotted #48bb78;}
+  .pause-log-item{padding:2px 0;border-top:1px dotted #48bb78;display:flex;justify-content:space-between;align-items:center;gap:6px;}
   .pause-log-item:first-child{border-top:none;}
+  .del-btn{background:#fed7d7;color:#c53030;border:1px solid #feb2b2;border-radius:4px;padding:2px 8px;font-size:.7rem;cursor:pointer;flex-shrink:0;}
+  .del-btn:hover{background:#feb2b2;}
   .inline-radio{display:inline-flex;gap:8px;font-size:.75rem;}
 </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>ポケスリ カウンター V17 <span id="pkm-badge" class="badge">サーナイト</span><span id="pause-badge" class="badge paused" style="display:none;">⏸ 離脱中</span></h1>
+  <h1>ポケスリ カウンター V18 <span id="pkm-badge" class="badge">サーナイト</span><span id="pause-badge" class="badge paused" style="display:none;">⏸ 離脱中</span></h1>
 
   <div class="section-title">ポケモン選択</div>
   <div class="box">
@@ -169,10 +171,10 @@
           <label><input type="checkbox" id="camp-ticket" onchange="updateCalculations();saveConfig();">いいキャンプチケ</label>
         </div>
         <div class="row">
-          <label>EX好物:</label>
+          <label>EX補正:</label>
           <div class="chk-group">
-            <label><input type="checkbox" id="ex-fav-minus" onchange="toggleExFav('minus')">－10％</label>
-            <label><input type="checkbox" id="ex-fav-plus" onchange="toggleExFav('plus')">＋10％</label>
+            <label><input type="checkbox" id="ex-fav-minus" onchange="toggleExFav('minus')">10％バフ（時間短縮）</label>
+            <label><input type="checkbox" id="ex-fav-plus" onchange="toggleExFav('plus')">15％デバフ（時間延長）</label>
           </div>
         </div>
         <div class="row" style="align-items:flex-start;">
@@ -187,7 +189,7 @@
           <label>ストック補正:</label>
           <label><input type="checkbox" id="stock-correction" checked onchange="saveConfig();updateSessionDashboard();">2回発動時のみロスを差し引く</label>
         </div>
-        <div class="hint">※ 元気81%以上を維持する前提で、実速度は表示×2.22倍で計算しています。<br>※ V14: 「2回発動」があった間隔だけ、ストック超過分をポアソン計算で推定します。</div>
+        <div class="hint">※ 元気81%以上を維持する前提で、実速度は表示×2.22倍で計算しています。<br>※ EX補正はメインきのみ対象時-10%(短縮)、対象外時+15%(延長)の公式仕様に準拠。</div>
       </div>
     </details>
 
@@ -434,8 +436,9 @@ function calcHourlyFromConfig(cfg){
   let activePeriod = pk.basePeriod*(1+nSpeed)*(1+subSpeed)*lvlBonus;
   activePeriod *= GENKI_MULTIPLIER;
   if(cfg.camp) activePeriod /= 1.2;
+  // V18: EX補正 = 10%バフ(短縮 x0.9) / 15%デバフ(延長 x1.15)
   if(cfg.exMinus) activePeriod *= 0.90;
-  else if(cfg.exPlus) activePeriod *= 1.10;
+  else if(cfg.exPlus) activePeriod *= 1.15;
 
   let subProb = 0;
   if(cfg.probM) subProb += 0.36;
@@ -685,7 +688,6 @@ function showManualPause(){
   document.getElementById('manual-pause-time').focus();
 }
 
-// V17: 時刻+ラジオボタン方式で離脱/復帰を1件ずつ追加
 function applyManualPauseSingle(){
   if(!session){ alert('先に計測を開始してください'); return; }
   const t = val('manual-pause-time');
@@ -703,11 +705,9 @@ function applyManualPauseSingle(){
   if(!session.pauseIntervals) session.pauseIntervals = [];
 
   if(type === 'leave'){
-    // 現在離脱中なら拒否
     if(isPaused()){
       alert('⚠ 既に離脱中です。先に復帰を記録してください。'); return;
     }
-    // 直前の復帰時刻より前なら拒否
     const last = session.pauseIntervals[session.pauseIntervals.length-1];
     if(last && last.end && targetTime <= last.end){
       alert('⚠ 前回の復帰時刻より後の離脱時刻を指定してください。'); return;
@@ -716,7 +716,6 @@ function applyManualPauseSingle(){
     saveSession();
     addLog(`⏸ 手動離脱 ${fmtTime(targetTime)}`);
   } else {
-    // 復帰
     const last = session.pauseIntervals[session.pauseIntervals.length-1];
     if(!last || last.end !== null){
       alert('⚠ 離脱中ではありません。先に離脱を記録してください。'); return;
@@ -725,7 +724,6 @@ function applyManualPauseSingle(){
       alert('⚠ 復帰時刻は離脱時刻より後にしてください。'); return;
     }
     last.end = targetTime;
-    // げんきタイマー再開（復帰時点から時間経過を再計算）
     if(energyState.lastUpdate === null){
       energyState.lastUpdate = targetTime;
       saveEnergy();
@@ -738,6 +736,22 @@ function applyManualPauseSingle(){
   document.getElementById('manual-pause-time').value = '';
 }
 
+// V18: 離脱履歴の削除
+function deletePauseInterval(index){
+  if(!session || !session.pauseIntervals) return;
+  const p = session.pauseIntervals[index];
+  if(!p) return;
+  const label = p.end === null
+    ? `${fmtTime(p.start)}〜離脱中`
+    : `${fmtTime(p.start)}〜${fmtTime(p.end)}`;
+  if(!confirm(`この離脱記録を削除しますか？\n${label}`)) return;
+  session.pauseIntervals.splice(index, 1);
+  saveSession();
+  addLog(`🗑 離脱記録を削除: ${label}`);
+  updateSessionDashboard();
+  renderPauseLog();
+}
+
 function renderPauseLog(){
   const c = document.getElementById('pause-log-container');
   c.innerHTML = '';
@@ -745,16 +759,23 @@ function renderPauseLog(){
   const div = document.createElement('div');
   div.className = 'pause-log';
   div.innerHTML = '<b>⏸ パーティー離脱履歴</b>';
-  session.pauseIntervals.forEach(p=>{
+  session.pauseIntervals.forEach((p,i)=>{
     const item = document.createElement('div');
     item.className = 'pause-log-item';
+    let content = '';
     if(p.end === null){
       const dur = ((Date.now()-p.start)/60000).toFixed(0);
-      item.innerHTML = `${fmtTime(p.start)} 〜 <span style="color:#c53030;">現在も離脱中</span> (${dur}分)`;
+      content = `${fmtTime(p.start)} 〜 <span style="color:#c53030;">現在も離脱中</span> (${dur}分)`;
     } else {
       const dur = ((p.end-p.start)/60000).toFixed(0);
-      item.innerHTML = `${fmtTime(p.start)} 〜 ${fmtTime(p.end)} (${dur}分)`;
+      content = `${fmtTime(p.start)} 〜 ${fmtTime(p.end)} (${dur}分)`;
     }
+    item.innerHTML = `<span style="flex:1;">${content}</span>`;
+    const delBtn = document.createElement('button');
+    delBtn.className = 'del-btn';
+    delBtn.textContent = '🗑削除';
+    delBtn.onclick = ()=>deletePauseInterval(i);
+    item.appendChild(delBtn);
     div.appendChild(item);
   });
   c.appendChild(div);
@@ -782,8 +803,8 @@ function describeConfigDiff(prev, cur){
   if(!prev) return 'なし';
   if(prev.otomo !== cur.otomo) diffs.push(`おてボ${prev.otomo}→${cur.otomo}枚`);
   if(prev.camp !== cur.camp) diffs.push(`キャンプ${cur.camp?'ON':'OFF'}`);
-  if(prev.exMinus !== cur.exMinus) diffs.push(`EX-10%${cur.exMinus?'ON':'OFF'}`);
-  if(prev.exPlus !== cur.exPlus) diffs.push(`EX+10%${cur.exPlus?'ON':'OFF'}`);
+  if(prev.exMinus !== cur.exMinus) diffs.push(`10%バフ${cur.exMinus?'ON':'OFF'}`);
+  if(prev.exPlus !== cur.exPlus) diffs.push(`15%デバフ${cur.exPlus?'ON':'OFF'}`);
   const prevBuf = prev.exBuffType || (prev.exBuff ? '1.25' : 'none');
   const curBuf = cur.exBuffType || (cur.exBuff ? '1.25' : 'none');
   if(prevBuf !== curBuf) diffs.push(`バフ${prevBuf}→${curBuf}`);
@@ -812,6 +833,22 @@ function applyManualConfigChange(){
   document.getElementById('manual-cfg-row').style.display = 'none';
 }
 
+// V18: 環境変更履歴の削除（開始時のconfigは削除不可）
+function deleteConfigChange(index){
+  if(!session || !session.configChanges) return;
+  if(index === 0){
+    alert('計測開始時の設定は削除できません'); return;
+  }
+  const cfg = session.configChanges[index];
+  if(!cfg) return;
+  if(!confirm(`この環境変更記録を削除しますか？\n${fmtTime(cfg.time)} の変更`)) return;
+  session.configChanges.splice(index, 1);
+  saveSession();
+  addLog(`🗑 環境変更記録を削除: ${fmtTime(cfg.time)}`);
+  updateSessionDashboard();
+  renderConfigLog();
+}
+
 function renderConfigLog(){
   const c = document.getElementById('config-log-container');
   c.innerHTML = '';
@@ -825,7 +862,17 @@ function renderConfigLog(){
     const hourly = calcHourlyFromConfig(cfg);
     const item = document.createElement('div');
     item.className = 'config-log-item';
-    item.innerHTML = `${fmtTime(cfg.time)} ${label} <span style="color:#718096;">(期待値 ${hourly.toFixed(3)}/h)</span>`;
+    const content = document.createElement('span');
+    content.style.flex = '1';
+    content.innerHTML = `${fmtTime(cfg.time)} ${label} <span style="color:#718096;">(期待値 ${hourly.toFixed(3)}/h)</span>`;
+    item.appendChild(content);
+    if(i > 0){
+      const delBtn = document.createElement('button');
+      delBtn.className = 'del-btn';
+      delBtn.textContent = '🗑削除';
+      delBtn.onclick = ()=>deleteConfigChange(i);
+      item.appendChild(delBtn);
+    }
     div.appendChild(item);
   });
   c.appendChild(div);
@@ -1130,7 +1177,7 @@ function renderMonthly(){
 }
 
 function buildPayload(){
-  return { version:17, exportedAt: new Date().toISOString(),
+  return { version:18, exportedAt: new Date().toISOString(),
     dailyLogs, session,
     config: JSON.parse(localStorage.getItem(K_CFG)||'{}') };
 }
